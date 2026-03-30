@@ -1,13 +1,13 @@
 const variant = process.env.APP_ENV || 'development';
 const name = {
-    development: "Happy (dev)",
-    preview: "Happy (preview)",
-    production: "Happy"
+    development: "Hoppy (dev)",
+    preview: "Hoppy (preview)",
+    production: "Hoppy"
 }[variant];
 const bundleId = {
-    development: "com.slopus.happy.dev",
-    preview: "com.slopus.happy.preview",
-    production: "com.ex3ndr.happy"
+    development: "com.hoppy.app.dev",
+    preview: "com.hoppy.app.preview",
+    production: "com.hoppy.app"
 }[variant];
 const elevenLabsAgentId = {
     development: 'agent_7801k2c0r5hjfraa1kdbytpvs6yt',
@@ -23,7 +23,7 @@ const consoleLoggingDefault = {
 export default {
     expo: {
         name,
-        slug: "happy",
+        slug: "hoppy",
         version: "1.7.0",
         runtimeVersion: "21",
         orientation: "default",
@@ -47,7 +47,7 @@ export default {
             adaptiveIcon: {
                 foregroundImage: "./sources/assets/images/icon-adaptive.png",
                 monochromeImage: "./sources/assets/images/icon-monochrome.png",
-                backgroundColor: "#18171C"
+                backgroundColor: "#FF9A3C"
             },
             permissions: [
                 "android.permission.RECORD_AUDIO",
