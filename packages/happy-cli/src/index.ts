@@ -831,7 +831,7 @@ ${chalk.bold('Usage:')}
 
 ${chalk.bold('Options:')}
   -p <message>    Notification message (required)
-  -t <title>      Notification title (optional, defaults to "Happy")
+  -t <title>      Notification title (optional, defaults to "Hoppy")
 
 ${chalk.bold('Examples:')}
   happy notify -p "Deployment complete!"
@@ -860,8 +860,8 @@ ${chalk.bold('Examples:')}
     // Create API client and send push notification
     const api = await ApiClient.create(credentials);
 
-    // Use custom title or default to "Happy"
-    const notificationTitle = title || 'Happy'
+    // Use custom title or default to "Hoppy"
+    const notificationTitle = title || 'Hoppy'
 
     // Send the push notification
     api.push().sendToAllDevices(
