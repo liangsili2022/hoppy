@@ -159,6 +159,7 @@ function NotAuthenticated() {
             <View style={styles.landscapeInner}>
                 <View style={styles.landscapeLogoSection}>
                     <HoppyLogo />
+                    <AiBadges />
                 </View>
                 <View style={styles.landscapeContentSection}>
                     <Text style={styles.landscapeTitle}>
@@ -276,7 +277,7 @@ const styles = StyleSheet.create((theme) => ({
     subtitle: {
         ...Typography.default(),
         fontSize: 15,
-        color: '#555',
+        color: '#666666',
         marginTop: 20,
         textAlign: 'center',
         marginHorizontal: 32,
@@ -298,6 +299,7 @@ const styles = StyleSheet.create((theme) => ({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 48,
+        backgroundColor: '#080808',
     },
     landscapeInner: {
         flexGrow: 1,
@@ -323,12 +325,12 @@ const styles = StyleSheet.create((theme) => ({
         textAlign: 'center',
         fontSize: 24,
         ...Typography.default('semiBold'),
-        color: theme.colors.text,
+        color: '#F0F0F0',
     },
     landscapeSubtitle: {
         ...Typography.default(),
         fontSize: 18,
-        color: theme.colors.textSecondary,
+        color: '#666666',
         marginTop: 16,
         textAlign: 'center',
         marginBottom: 32,

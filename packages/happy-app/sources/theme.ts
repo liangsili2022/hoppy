@@ -244,29 +244,28 @@ export const darkTheme = {
     colors: {
 
         //
-        // Main colors
+        // Main colors — Option C Dark Neon palette
         //
 
-        text: '#ffffff',
+        text: '#F0F0F0',
         textDestructive: Platform.select({ ios: '#FF453A', default: '#F48FB1' }),
-        textSecondary: Platform.select({ ios: '#8E8E93', default: '#CAC4D0' }),
-        textLink: '#2BACCC',
+        textSecondary: Platform.select({ ios: '#666666', default: '#666666' }),
+        textLink: '#FF9A3C',
         deleteAction: '#FF6B6B', // Delete/remove button color (same in both themes)
         warningCritical: '#FF453A',
         warning: '#8E8E93',
         success: '#32D74B',
-        surface: Platform.select({ ios: '#18171C', default: '#212121' }),
-        surfaceRipple: 'rgba(255, 255, 255, 0.08)',
-        surfacePressed: '#2C2C2E',
-        surfaceSelected: '#2C2C2E',
-        surfacePressedOverlay: Platform.select({ ios: '#2C2C2E', default: 'transparent' }),
-        // iOS dark theme is #1c1c1e for items, and #000 for the background
-        surfaceHigh: Platform.select({ ios: '#2C2C2E', default: '#171717' }),
-        surfaceHighest: Platform.select({ ios: '#38383A', default: '#292929' }),
-        divider: Platform.select({ ios: '#38383A', default: '#292929' }),
+        surface: '#0D0D0D',
+        surfaceRipple: 'rgba(255, 154, 60, 0.08)',
+        surfacePressed: '#1A1A1A',
+        surfaceSelected: '#1A1A1A',
+        surfacePressedOverlay: Platform.select({ ios: '#1A1A1A', default: 'transparent' }),
+        surfaceHigh: '#141414',
+        surfaceHighest: '#1A1A1A',
+        divider: '#222222',
         shadow: {
-            color: Platform.select({ default: '#000000', web: 'rgba(0, 0, 0, 0.1)' }),
-            opacity: 0.1,
+            color: Platform.select({ default: '#000000', web: 'rgba(0, 0, 0, 0.5)' }),
+            opacity: 0.5,
         },
 
         //
@@ -274,60 +273,60 @@ export const darkTheme = {
         //
 
         header: {
-            background: Platform.select({ ios: '#18171C', default: '#212121' }),
-            tint: '#ffffff'
+            background: '#080808',
+            tint: '#F0F0F0'
         },
         switch: {
             track: {
-                active: Platform.select({ ios: '#34C759', default: '#1976D2' }),
-                inactive: '#3a393f',
+                active: '#FF9A3C',
+                inactive: '#2A2A2A',
             },
             thumb: {
                 active: '#FFFFFF',
-                inactive: '#767577',
+                inactive: '#555555',
             },
         },
         groupped: {
-            background: Platform.select({ ios: '#1C1C1E', default: '#1e1e1e' }),
-            chevron: Platform.select({ ios: '#48484A', default: '#CAC4D0' }),
-            sectionTitle: Platform.select({ ios: '#8E8E93', default: '#CAC4D0' }),
+            background: '#080808',
+            chevron: '#444444',
+            sectionTitle: '#666666',
         },
         fab: {
-            background: '#FFFFFF',
-            backgroundPressed: '#f0f0f0',
-            icon: '#000000',
+            background: '#FF9A3C',
+            backgroundPressed: '#E8861E',
+            icon: '#080808',
         },
         radio: {
-            active: '#0A84FF',
-            inactive: '#48484A',
-            dot: '#0A84FF',
+            active: '#FF9A3C',
+            inactive: '#333333',
+            dot: '#FF9A3C',
         },
         modal: {
-            border: 'rgba(255, 255, 255, 0.1)'
+            border: 'rgba(255, 154, 60, 0.2)'
         },
         button: {
             primary: {
-                background: '#000000',
-                tint: '#FFFFFF',
-                disabled: '#C0C0C0',
+                background: '#FF9A3C',
+                tint: '#080808',
+                disabled: '#333333',
             },
             secondary: {
-                tint: '#8E8E93',
+                tint: '#888888',
             }
         },
         input: {
-            background: Platform.select({ ios: '#1C1C1E', default: '#303030' }),
-            text: '#FFFFFF',
-            placeholder: '#8E8E93',
+            background: '#141414',
+            text: '#F0F0F0',
+            placeholder: '#555555',
         },
         box: {
             warning: {
-                background: 'rgba(255, 159, 10, 0.15)',
-                border: '#FF9F0A',
-                text: '#FFAB00',
+                background: 'rgba(255, 154, 60, 0.1)',
+                border: '#FF9A3C',
+                text: '#FF9A3C',
             },
             error: {
-                background: 'rgba(255, 69, 58, 0.15)',
+                background: 'rgba(255, 69, 58, 0.1)',
                 border: '#FF453A',
                 text: '#FF6B6B',
             }
@@ -338,11 +337,11 @@ export const darkTheme = {
         //
 
         status: { // App Connection Status
-            connected: '#34C759',
-            connecting: '#FFFFFF',
-            disconnected: '#8E8E93',
+            connected: '#32D74B',
+            connecting: '#FF9A3C',
+            disconnected: '#555555',
             error: '#FF453A',
-            default: '#8E8E93',
+            default: '#555555',
         },
 
         // Permission mode colors

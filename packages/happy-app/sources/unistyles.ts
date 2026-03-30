@@ -29,15 +29,16 @@ const themePreference = loadThemePreference();
 const getInitialTheme = (): 'light' | 'dark' => {
     if (themePreference === 'adaptive') {
         const systemTheme = Appearance.getColorScheme();
-        return systemTheme === 'dark' ? 'dark' : 'light';
+        // Default to dark if system theme is not set (common on web)
+        return systemTheme === 'dark' ? 'dark' : 'dark';
     }
     return themePreference;
 };
 
 const settings = themePreference === 'adaptive'
     ? {
-        // When adaptive, let Unistyles handle theme switching automatically
-        adaptiveThemes: true,
+        // When adaptive, default to dark theme for Hoppy (Option C Dark Neon)
+        initialTheme: 'dark' as const,
         CSSVars: true, // Enable CSS variables for web
     }
     : {
@@ -80,3 +81,9 @@ const setRootBackgroundColor = () => {
 
 // Set initial background color
 setRootBackgroundColor();
+
+// Force dark theme on web platform for Hoppy (Option C Dark Neon)
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    document.documentElement.style.backgroundColor = '#080808';
+    document.body.style.backgroundColor = '#080808';
+}

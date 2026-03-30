@@ -1,3 +1,8 @@
+/* Global dark background for Option C Dark Neon theme */
+html, body, #root {
+    background-color: #080808;
+}
+
 /* Theme-aware scrollbar styles using Unistyles CSS variables */
 
 /* Webkit Scrollbars (Chrome, Safari, Edge) */
