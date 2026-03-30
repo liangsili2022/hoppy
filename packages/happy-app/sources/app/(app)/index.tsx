@@ -15,8 +15,8 @@ import { HomeHeaderNotAuth } from "@/components/HomeHeader";
 import { MainView } from "@/components/MainView";
 import { t } from '@/text';
 
-// Hoppy bunny — exactly as shown in Option C mockup
-function HoppyBunnySvg() {
+// Huppy bunny — exactly as shown in Option C mockup
+function HuppyBunnySvg() {
     if (Platform.OS === 'web') {
         return (
             <View style={logoStyles.svgWrap}>
@@ -42,11 +42,11 @@ function HoppyBunnySvg() {
     );
 }
 
-function HoppyLogo() {
+function HuppyLogo() {
     return (
         <View style={logoStyles.wrap}>
-            <HoppyBunnySvg />
-            <Text style={logoStyles.name}>HOPPY</Text>
+            <HuppyBunnySvg />
+            <Text style={logoStyles.name}>HUPPY</Text>
             <Text style={logoStyles.tagline}>AI Agent Controller</Text>
         </View>
     );
@@ -105,7 +105,7 @@ function NotAuthenticated() {
 
     const portraitLayout = (
         <View style={styles.portraitContainer}>
-            <HoppyLogo />
+            <HuppyLogo />
             <AiBadges />
             <Text style={styles.subtitle}>
                 {t('welcome.subtitle')}
@@ -158,7 +158,7 @@ function NotAuthenticated() {
         <View style={[styles.landscapeContainer, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.landscapeInner}>
                 <View style={styles.landscapeLogoSection}>
-                    <HoppyLogo />
+                    <HuppyLogo />
                     <AiBadges />
                 </View>
                 <View style={styles.landscapeContentSection}>
@@ -221,7 +221,7 @@ function NotAuthenticated() {
     )
 }
 
-// Hoppy logo styles
+// Huppy logo styles
 const logoStyles = StyleSheet.create(() => ({
     wrap: { alignItems: 'center', marginBottom: 8 },
     svgWrap: { marginBottom: 12, alignItems: 'center' },

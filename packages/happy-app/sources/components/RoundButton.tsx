@@ -64,7 +64,7 @@ export const RoundButton = React.memo((props: { size?: RoundButtonSize, display?
         borderColor: string,
     } } = {
         default: {
-            // Hoppy: neon orange outline style (Option C)
+            // Huppy: neon orange outline style (Option C)
             backgroundColor: 'transparent',
             borderColor: '#FF9A3C',
             textColor: '#FF9A3C',

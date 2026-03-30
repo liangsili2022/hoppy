@@ -118,7 +118,7 @@ export const zhHant: TranslationStructure = {
         developer: '開發者',
         developerTools: '開發者工具',
         about: '關於',
-        aboutFooter: 'Hoppy 是一個 Codex 和 Claude Code 行動用戶端。它採用端對端加密，您的帳戶僅儲存在本機裝置上。與 Anthropic 無關聯。',
+        aboutFooter: 'Huppy 是一個 Codex 和 Claude Code 行動用戶端。它採用端對端加密，您的帳戶僅儲存在本機裝置上。與 Anthropic 無關聯。',
         whatsNew: '更新日誌',
         whatsNewSubtitle: '查看最新更新和改進',
         reportIssue: '回報問題',
@@ -445,7 +445,7 @@ export const zhHant: TranslationStructure = {
     },
 
     sidebar: {
-        sessionsTitle: 'Hoppy',
+        sessionsTitle: 'Huppy',
     },
 
     toolView: {
@@ -646,7 +646,7 @@ export const zhHant: TranslationStructure = {
         invalidConnectionLink: '無效的連線連結',
         invalidConnectionLinkDescription: '連線連結缺失或無效。請檢查 URL 並重試。',
         connectTerminal: '連線終端',
-        terminalRequestDescription: '有終端正在請求連線到您的 Hoppy 帳戶。這將允許終端安全地傳送和接收訊息。',
+        terminalRequestDescription: '有終端正在請求連線到您的 Huppy 帳戶。這將允許終端安全地傳送和接收訊息。',
         connectionDetails: '連線詳情',
         publicKey: '公鑰',
         encryption: '加密',

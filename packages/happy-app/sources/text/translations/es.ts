@@ -117,7 +117,7 @@ export const es: TranslationStructure = {
         developer: 'Desarrollador',
         developerTools: 'Herramientas de desarrollador',
         about: 'Acerca de',
-        aboutFooter: 'Hoppy es un cliente móvil para Codex y Claude Code. Todo está cifrado de extremo a extremo y tu cuenta se guarda solo en tu dispositivo. No está afiliado con Anthropic.',
+        aboutFooter: 'Huppy es un cliente móvil para Codex y Claude Code. Todo está cifrado de extremo a extremo y tu cuenta se guarda solo en tu dispositivo. No está afiliado con Anthropic.',
         whatsNew: 'Novedades',
         whatsNewSubtitle: 'Ve las últimas actualizaciones y mejoras',
         reportIssue: 'Reportar un problema',
@@ -445,7 +445,7 @@ export const es: TranslationStructure = {
     },
 
     sidebar: {
-        sessionsTitle: 'Hoppy',
+        sessionsTitle: 'Huppy',
     },
 
     toolView: {
@@ -646,7 +646,7 @@ export const es: TranslationStructure = {
         invalidConnectionLink: 'Enlace de conexión inválido',
         invalidConnectionLinkDescription: 'El enlace de conexión falta o es inválido. Verifica la URL e intenta nuevamente.',
         connectTerminal: 'Conectar terminal',
-        terminalRequestDescription: 'Un terminal está solicitando conectarse a tu cuenta de Hoppy. Esto permitirá al terminal enviar y recibir mensajes de forma segura.',
+        terminalRequestDescription: 'Un terminal está solicitando conectarse a tu cuenta de Huppy. Esto permitirá al terminal enviar y recibir mensajes de forma segura.',
         connectionDetails: 'Detalles de conexión',
         publicKey: 'Clave pública',
         encryption: 'Cifrado',

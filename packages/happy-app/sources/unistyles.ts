@@ -37,7 +37,7 @@ const getInitialTheme = (): 'light' | 'dark' => {
 
 const settings = themePreference === 'adaptive'
     ? {
-        // When adaptive, default to dark theme for Hoppy (Option C Dark Neon)
+        // When adaptive, default to dark theme for Huppy (Option C Dark Neon)
         initialTheme: 'dark' as const,
         CSSVars: true, // Enable CSS variables for web
     }
@@ -82,7 +82,7 @@ const setRootBackgroundColor = () => {
 // Set initial background color
 setRootBackgroundColor();
 
-// Force dark theme on web platform for Hoppy (Option C Dark Neon)
+// Force dark theme on web platform for Huppy (Option C Dark Neon)
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
     document.documentElement.style.backgroundColor = '#080808';
     document.body.style.backgroundColor = '#080808';

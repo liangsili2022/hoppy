@@ -99,7 +99,7 @@ export const ru: TranslationStructure = {
         developer: 'Разработчик',
         developerTools: 'Инструменты разработчика',
         about: 'О программе',
-        aboutFooter: 'Hoppy — мобильное приложение для работы с Codex и Claude Code. Использует сквозное шифрование, все данные аккаунта хранятся только на вашем устройстве. Не связано с Anthropic.',
+        aboutFooter: 'Huppy — мобильное приложение для работы с Codex и Claude Code. Использует сквозное шифрование, все данные аккаунта хранятся только на вашем устройстве. Не связано с Anthropic.',
         whatsNew: 'Что нового',
         whatsNewSubtitle: 'Посмотреть последние обновления и улучшения',
         reportIssue: 'Сообщить о проблеме',
@@ -454,7 +454,7 @@ export const ru: TranslationStructure = {
     },
 
     sidebar: {
-        sessionsTitle: 'Hoppy',
+        sessionsTitle: 'Huppy',
     },
 
     toolView: {
@@ -643,7 +643,7 @@ export const ru: TranslationStructure = {
         invalidConnectionLink: 'Неверная ссылка подключения',
         invalidConnectionLinkDescription: 'Ссылка подключения отсутствует или неверна. Проверьте URL и попробуйте снова.',
         connectTerminal: 'Подключить терминал',
-        terminalRequestDescription: 'Терминал запрашивает подключение к вашему аккаунту Hoppy. Это позволит терминалу безопасно отправлять и получать сообщения.',
+        terminalRequestDescription: 'Терминал запрашивает подключение к вашему аккаунту Huppy. Это позволит терминалу безопасно отправлять и получать сообщения.',
         connectionDetails: 'Детали подключения',
         publicKey: 'Публичный ключ',
         encryption: 'Шифрование',

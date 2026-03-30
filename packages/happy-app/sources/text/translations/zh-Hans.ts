@@ -119,7 +119,7 @@ export const zhHans: TranslationStructure = {
         developer: '开发者',
         developerTools: '开发者工具',
         about: '关于',
-        aboutFooter: 'Hoppy 是一个 Codex 和 Claude Code 移动客户端。它采用端到端加密，您的账户仅存储在本地设备上。与 Anthropic 无关联。',
+        aboutFooter: 'Huppy 是一个 Codex 和 Claude Code 移动客户端。它采用端到端加密，您的账户仅存储在本地设备上。与 Anthropic 无关联。',
         whatsNew: '更新日志',
         whatsNewSubtitle: '查看最新更新和改进',
         reportIssue: '报告问题',
@@ -339,7 +339,7 @@ export const zhHans: TranslationStructure = {
         path: '路径',
         operatingSystem: '操作系统',
         processId: '进程 ID',
-        happyHome: 'Hoppy 主目录',
+        happyHome: 'Huppy 主目录',
         copyMetadata: '复制元数据',
         agentState: 'Agent 状态',
         controlledByUser: '用户控制',
@@ -446,7 +446,7 @@ export const zhHans: TranslationStructure = {
     },
 
     sidebar: {
-        sessionsTitle: 'Hoppy',
+        sessionsTitle: 'Huppy',
     },
 
     toolView: {
@@ -647,7 +647,7 @@ export const zhHans: TranslationStructure = {
         invalidConnectionLink: '无效的连接链接',
         invalidConnectionLinkDescription: '连接链接缺失或无效。请检查 URL 并重试。',
         connectTerminal: '连接终端',
-        terminalRequestDescription: '有终端正在请求连接到您的 Hoppy 账户。这将允许终端安全地发送和接收消息。',
+        terminalRequestDescription: '有终端正在请求连接到您的 Huppy 账户。这将允许终端安全地发送和接收消息。',
         connectionDetails: '连接详情',
         publicKey: '公钥',
         encryption: '加密',

@@ -1,4 +1,4 @@
-// Hoppy Design Tokens
+// Huppy Design Tokens
 export const colors = {
     // Primary — neon orange
     primary: '#FF9A3C',

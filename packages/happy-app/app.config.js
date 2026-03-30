@@ -1,13 +1,13 @@
 const variant = process.env.APP_ENV || 'development';
 const name = {
-    development: "Hoppy (dev)",
-    preview: "Hoppy (preview)",
-    production: "Hoppy"
+    development: "Huppy (dev)",
+    preview: "Huppy (preview)",
+    production: "Huppy"
 }[variant];
 const bundleId = {
-    development: "com.hoppy.app.dev",
-    preview: "com.hoppy.app.preview",
-    production: "com.hoppy.app"
+    development: "com.huppy.app.dev",
+    preview: "com.huppy.app.preview",
+    production: "com.huppy.app"
 }[variant];
 const elevenLabsAgentId = {
     development: 'agent_7801k2c0r5hjfraa1kdbytpvs6yt',
@@ -23,7 +23,7 @@ const consoleLoggingDefault = {
 export default {
     expo: {
         name,
-        slug: "hoppy",
+        slug: "huppy",
         version: "1.7.0",
         runtimeVersion: "21",
         orientation: "default",
