@@ -15,6 +15,60 @@ import { HomeHeaderNotAuth } from "@/components/HomeHeader";
 import { MainView } from "@/components/MainView";
 import { t } from '@/text';
 
+// Hoppy bunny — exactly as shown in Option C mockup
+function HoppyBunnySvg() {
+    if (Platform.OS === 'web') {
+        return (
+            <View style={logoStyles.svgWrap}>
+                {/* @ts-ignore web-only SVG */}
+                <svg width="90" height="90" viewBox="0 0 90 90" fill="none"
+                    style={{ filter: 'drop-shadow(0 0 12px #FF9A3C99)' }}>
+                    <circle cx="45" cy="54" r="24" stroke="#FF9A3C" strokeWidth="1.5"/>
+                    <line x1="33" y1="30" x2="30" y2="6" stroke="#FF9A3C" strokeWidth="1.5" strokeLinecap="round"/>
+                    <line x1="57" y1="30" x2="60" y2="6" stroke="#FF9A3C" strokeWidth="1.5" strokeLinecap="round"/>
+                    <circle cx="38" cy="51" r="3" fill="#FF9A3C"/>
+                    <circle cx="52" cy="51" r="3" fill="#FF9A3C"/>
+                    <path d="M38 59 Q45 63 52 59" stroke="#FF9A3C" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+                    <rect x="34" y="64" width="22" height="13" rx="2" stroke="#FF9A3C55" strokeWidth="1"/>
+                    <line x1="29" y1="77" x2="61" y2="77" stroke="#FF9A3C44" strokeWidth="1.2" strokeLinecap="round"/>
+                </svg>
+            </View>
+        );
+    }
+    return (
+        <View style={logoStyles.glowRing}>
+            <Text style={{ fontSize: 48 }}>🐰</Text>
+        </View>
+    );
+}
+
+function HoppyLogo() {
+    return (
+        <View style={logoStyles.wrap}>
+            <HoppyBunnySvg />
+            <Text style={logoStyles.name}>HOPPY</Text>
+            <Text style={logoStyles.tagline}>AI Agent Controller</Text>
+        </View>
+    );
+}
+
+// AI badge chips
+function AiBadges() {
+    return (
+        <View style={badgeStyles.row}>
+            {[
+                { label: 'Claude', color: '#CC785C' },
+                { label: 'Gemini', color: '#4285F4' },
+                { label: 'Codex',  color: '#9747FF' },
+            ].map(({ label, color }) => (
+                <View key={label} style={[badgeStyles.chip, { borderColor: color + '66', backgroundColor: color + '11' }]}>
+                    <Text style={[badgeStyles.chipText, { color }]}>{label}</Text>
+                </View>
+            ))}
+        </View>
+    );
+}
+
 export default function Home() {
     const auth = useAuth();
     if (!auth.isAuthenticated) {
@@ -51,14 +105,8 @@ function NotAuthenticated() {
 
     const portraitLayout = (
         <View style={styles.portraitContainer}>
-            <Image
-                source={theme.dark ? require('@/assets/images/logotype-light.png') : require('@/assets/images/logotype-dark.png')}
-                resizeMode="contain"
-                style={styles.logo}
-            />
-            <Text style={styles.title}>
-                {t('welcome.title')}
-            </Text>
+            <HoppyLogo />
+            <AiBadges />
             <Text style={styles.subtitle}>
                 {t('welcome.subtitle')}
             </Text>
@@ -110,11 +158,7 @@ function NotAuthenticated() {
         <View style={[styles.landscapeContainer, { paddingBottom: insets.bottom + 24 }]}>
             <View style={styles.landscapeInner}>
                 <View style={styles.landscapeLogoSection}>
-                    <Image
-                        source={theme.dark ? require('@/assets/images/logotype-light.png') : require('@/assets/images/logotype-dark.png')}
-                        resizeMode="contain"
-                        style={styles.logo}
-                    />
+                    <HoppyLogo />
                 </View>
                 <View style={styles.landscapeContentSection}>
                     <Text style={styles.landscapeTitle}>
@@ -176,12 +220,47 @@ function NotAuthenticated() {
     )
 }
 
+// Hoppy logo styles
+const logoStyles = StyleSheet.create(() => ({
+    wrap: { alignItems: 'center', marginBottom: 8 },
+    svgWrap: { marginBottom: 12, alignItems: 'center' },
+    glowRing: {
+        width: 100, height: 100, borderRadius: 50,
+        borderWidth: 1.5, borderColor: '#FF9A3C66',
+        backgroundColor: '#FF9A3C0A',
+        alignItems: 'center', justifyContent: 'center',
+        marginBottom: 16,
+        shadowColor: '#FF9A3C',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 20,
+    },
+    innerCircle: { alignItems: 'center' },
+    name: {
+        fontSize: 28, fontWeight: '800', letterSpacing: 6,
+        color: '#FF9A3C',
+        textShadowColor: '#FF9A3C88',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 12,
+        marginBottom: 4,
+    },
+    tagline: { fontSize: 11, color: '#FF9A3C66', letterSpacing: 2, textTransform: 'uppercase' },
+}));
+
+// AI badge styles
+const badgeStyles = StyleSheet.create(() => ({
+    row: { flexDirection: 'row', gap: 10, marginTop: 20, marginBottom: 4 },
+    chip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1 },
+    chipText: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
+}));
+
 const styles = StyleSheet.create((theme) => ({
     // NotAuthenticated styles
     portraitContainer: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#080808',
     },
     logo: {
         width: 300,
@@ -196,12 +275,13 @@ const styles = StyleSheet.create((theme) => ({
     },
     subtitle: {
         ...Typography.default(),
-        fontSize: 18,
-        color: theme.colors.textSecondary,
-        marginTop: 16,
+        fontSize: 15,
+        color: '#555',
+        marginTop: 20,
         textAlign: 'center',
-        marginHorizontal: 24,
-        marginBottom: 64,
+        marginHorizontal: 32,
+        marginBottom: 40,
+        lineHeight: 22,
     },
     buttonContainer: {
         maxWidth: 280,
