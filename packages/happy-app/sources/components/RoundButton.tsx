@@ -64,14 +64,15 @@ export const RoundButton = React.memo((props: { size?: RoundButtonSize, display?
         borderColor: string,
     } } = {
         default: {
-            backgroundColor: theme.colors.button.primary.background,
-            borderColor: 'transparent',
-            textColor: theme.colors.button.primary.tint
+            // Hoppy: neon orange outline style (Option C)
+            backgroundColor: 'transparent',
+            borderColor: '#FF9A3C',
+            textColor: '#FF9A3C',
         },
         inverted: {
             backgroundColor: 'transparent',
             borderColor: 'transparent',
-            textColor: theme.colors.text,
+            textColor: theme.colors.textSecondary,
         }
     }
 
@@ -84,12 +85,16 @@ export const RoundButton = React.memo((props: { size?: RoundButtonSize, display?
             hitSlop={size.hitSlop}
             style={(p) => ([
                 {
-                    borderWidth: 1,
+                    borderWidth: 1.5,
                     borderRadius: size.height / 2,
                     backgroundColor: display.backgroundColor,
                     borderColor: display.borderColor,
                     opacity: props.disabled ? 0.5 : 1,
                     overflow: 'hidden',
+                    // Neon glow on web for primary button
+                    ...(Platform.OS === 'web' && display.borderColor === '#FF9A3C' ? {
+                        boxShadow: '0 0 20px rgba(255,154,60,0.25), inset 0 0 20px rgba(255,154,60,0.05)',
+                    } as any : {}),
                 },
                 {
                     opacity: p.pressed ? 0.9 : 1
