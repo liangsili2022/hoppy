@@ -749,16 +749,16 @@ function buildEnvVars(envDir: string, serverPort: number, expoPort: number): Rec
 
         // App (Expo)
         EXPO_PUBLIC_SERVER_URL: `http://localhost:${serverPort}`,
-        EXPO_PUBLIC_HAPPY_SERVER_URL: `http://localhost:${serverPort}`,
+        EXPO_PUBLIC_HUPPY_SERVER_URL: `http://localhost:${serverPort}`,
         EXPO_PUBLIC_LOG_SERVER_URL: "http://localhost:8787",
         EXPO_PORT: String(expoPort),
 
         // CLI
-        HAPPY_SERVER_URL: `http://localhost:${serverPort}`,
-        HAPPY_WEBAPP_URL: `http://localhost:${expoPort}`,
-        HAPPY_HOME_DIR: path.join(envDir, "cli", "home"),
+        HUPPY_SERVER_URL: `http://localhost:${serverPort}`,
+        HUPPY_WEBAPP_URL: `http://localhost:${expoPort}`,
+        HUPPY_HOME_DIR: path.join(envDir, "cli", "home"),
         HAPPY_PROJECT_DIR: projectDir,
-        HAPPY_VARIANT: "dev",
+        HUPPY_VARIANT: "dev",
         DEBUG: "1",
         ...(devAuth ? {
             EXPO_PUBLIC_DEV_TOKEN: devAuth.token,
@@ -789,7 +789,7 @@ function buildEnvSh(name: string, envDir: string, serverPort: number, expoPort: 
 
     lines.push("# App (Expo)");
     lines.push(`export EXPO_PUBLIC_SERVER_URL="${vars.EXPO_PUBLIC_SERVER_URL}"`);
-    lines.push(`export EXPO_PUBLIC_HAPPY_SERVER_URL="${vars.EXPO_PUBLIC_HAPPY_SERVER_URL}"`);
+    lines.push(`export EXPO_PUBLIC_HUPPY_SERVER_URL="${vars.EXPO_PUBLIC_HUPPY_SERVER_URL}"`);
     lines.push(`export EXPO_PUBLIC_LOG_SERVER_URL="${vars.EXPO_PUBLIC_LOG_SERVER_URL}"`);
     if (vars.EXPO_PUBLIC_DEV_TOKEN && vars.EXPO_PUBLIC_DEV_SECRET) {
         lines.push(`export EXPO_PUBLIC_DEV_TOKEN="${vars.EXPO_PUBLIC_DEV_TOKEN}"`);
@@ -799,11 +799,11 @@ function buildEnvSh(name: string, envDir: string, serverPort: number, expoPort: 
     lines.push("");
 
     lines.push("# CLI");
-    lines.push(`export HAPPY_SERVER_URL="${vars.HAPPY_SERVER_URL}"`);
-    lines.push(`export HAPPY_WEBAPP_URL="${vars.HAPPY_WEBAPP_URL}"`);
-    lines.push(`export HAPPY_HOME_DIR="${vars.HAPPY_HOME_DIR}"`);
+    lines.push(`export HUPPY_SERVER_URL="${vars.HUPPY_SERVER_URL}"`);
+    lines.push(`export HUPPY_WEBAPP_URL="${vars.HUPPY_WEBAPP_URL}"`);
+    lines.push(`export HUPPY_HOME_DIR="${vars.HUPPY_HOME_DIR}"`);
     lines.push(`export HAPPY_PROJECT_DIR="${vars.HAPPY_PROJECT_DIR}"`);
-    lines.push(`export HAPPY_VARIANT=dev`);
+    lines.push(`export HUPPY_VARIANT=dev`);
     lines.push(`export DEBUG=1`);
     lines.push(`export PATH="${path.join(envDir, "bin")}:$PATH"`);
     lines.push("");

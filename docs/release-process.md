@@ -95,7 +95,7 @@ CI/CD: TeamCity `Lab_HappyServer` (config in UI, not in repo) -> Docker build ->
 
 ## Docs
 
-    Site             happy.engineering (GitHub Pages)
+    Site             huppy.ai (GitHub Pages)
     Repo             github.com/slopus/slopus.github.io
 
 Separate repo, not part of this monorepo.

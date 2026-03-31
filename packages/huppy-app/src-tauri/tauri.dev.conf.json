@@ -1,0 +1,12 @@
+{
+  "$schema": "../../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Huppy (dev)",
+  "identifier": "ai.huppy.app.dev",
+  "app": {
+    "windows": [
+      {
+        "title": "Huppy (dev)"
+      }
+    ]
+  }
+}
