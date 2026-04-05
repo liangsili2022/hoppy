@@ -92,6 +92,11 @@ export const SettingsView = React.memo(function SettingsView() {
     const isAnthropicConnected = profile.connectedServices?.includes('anthropic') || false;
 
     // GitHub connection
+    const [connectingGitHub, connectGitHub] = useHuppyAction(async () => {
+        const params = await getGitHubOAuthParams(auth.credentials!);
+        await Linking.openURL(params.url);
+    });
+
     // GitHub disconnection
     const [disconnectingGitHub, handleDisconnectGitHub] = useHuppyAction(async () => {
         const confirmed = await Modal.confirm(
@@ -233,8 +238,8 @@ export const SettingsView = React.memo(function SettingsView() {
                             color={isGitHubConnected ? theme.colors.status.connected : theme.colors.textSecondary}
                         />
                     }
-                    onPress={isGitHubConnected ? handleDisconnectGitHub : () => router.push(getSettingsConnectRoute('github') as never)}
-                    loading={disconnectingGitHub}
+                    onPress={isGitHubConnected ? handleDisconnectGitHub : connectGitHub}
+                    loading={connectingGitHub || disconnectingGitHub}
                     showChevron={!isGitHubConnected}
                 />
             </ItemGroup>
