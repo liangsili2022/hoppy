@@ -1,17 +1,39 @@
 import React from 'react';
 import { ActivityIndicator, Linking, Pressable, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
 import { Text } from '@/components/StyledText';
 import { getGitHubOAuthParams } from '@/sync/apiGithub';
+import { sync } from '@/sync/sync';
 import { t } from '@/text';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-export default function GitHubConnectScreen() {
+export default React.memo(function GitHubConnectScreen() {
     const { theme } = useUnistyles();
     const auth = useAuth();
+    const router = useRouter();
     const [url, setUrl] = React.useState<string | null>(null);
     const [loading, setLoading] = React.useState(true);
+    const [waitingForCallback, setWaitingForCallback] = React.useState(false);
     const [error, setError] = React.useState<string | null>(null);
+
+    // Listen for huppy://github-connected and huppy://github-error deep links
+    // that the server sends back after the OAuth flow completes.
+    React.useEffect(() => {
+        const subscription = Linking.addEventListener('url', ({ url: incomingUrl }) => {
+            if (incomingUrl.startsWith('huppy://github-connected')) {
+                // Refresh profile so the new GitHub connection shows up immediately.
+                void sync.invalidate();
+                router.back();
+            } else if (incomingUrl.startsWith('huppy://github-error')) {
+                const params = new URL(incomingUrl);
+                setError(`GitHub authorization failed: ${params.searchParams.get('code') ?? 'unknown'}`);
+                setWaitingForCallback(false);
+            }
+        });
+
+        return () => subscription.remove();
+    }, [router]);
 
     const openGitHub = React.useCallback(async (targetUrl?: string | null) => {
         if (!targetUrl) {
@@ -21,6 +43,7 @@ export default function GitHubConnectScreen() {
         try {
             await Linking.openURL(targetUrl);
             setError(null);
+            setWaitingForCallback(true);
         } catch (openError) {
             setError(openError instanceof Error ? openError.message : 'Failed to open GitHub');
         }
@@ -68,6 +91,22 @@ export default function GitHubConnectScreen() {
                         <Text style={[styles.body, { color: theme.colors.textSecondary }]}>
                             {t('common.loading')}
                         </Text>
+                    </>
+                ) : waitingForCallback ? (
+                    <>
+                        <ActivityIndicator size="small" color={theme.colors.text} />
+                        <Text style={[styles.body, { color: theme.colors.textSecondary }]}>
+                            {'Waiting for GitHub authorization… Complete the sign-in in your browser, then return here.'}
+                        </Text>
+                        <Pressable
+                            onPress={() => void openGitHub(url)}
+                            style={({ pressed }) => [
+                                styles.button,
+                                { backgroundColor: theme.colors.textSecondary, opacity: pressed ? 0.85 : 1 },
+                            ]}
+                        >
+                            <Text style={styles.buttonText}>{'Reopen GitHub'}</Text>
+                        </Pressable>
                     </>
                 ) : (
                     <>
