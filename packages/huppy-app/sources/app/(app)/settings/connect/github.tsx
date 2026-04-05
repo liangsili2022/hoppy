@@ -168,4 +168,5 @@ const styles = StyleSheet.create((theme) => ({
         fontSize: 16,
         fontWeight: '600',
     },
+
 }));
