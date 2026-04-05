@@ -21,7 +21,8 @@ import { loadPendingSettings, savePendingSettings } from './persistence';
 import { initializeTracking, tracking } from '@/track';
 import { parseToken } from '@/utils/parseToken';
 import { RevenueCat, LogLevel, PaywallResult } from './revenueCat';
-import { trackPaywallPresented, trackPaywallPurchased, trackPaywallCancelled, trackPaywallRestored, trackPaywallError } from '@/track';
+import { PaywallManager } from '@/components/PaywallManager';
+import { trackPaywallError } from '@/track';
 import { getServerUrl } from './serverConfig';
 import { config } from '@/config';
 import { log } from '@/log';
@@ -610,35 +611,25 @@ class Sync {
                 return { success: false, error };
             }
 
-            // Track paywall presentation
-            trackPaywallPresented();
-
-            // Present the paywall
-            const result = await RevenueCat.presentPaywall();
+            // Present the custom paywall host
+            const result = await PaywallManager.present();
 
             // Handle the result
             switch (result) {
                 case PaywallResult.PURCHASED:
-                    trackPaywallPurchased();
-                    // Refresh customer info after purchase
-                    await this.syncPurchases();
-                    return { success: true, purchased: true };
                 case PaywallResult.RESTORED:
-                    trackPaywallRestored();
-                    // Refresh customer info after restore
-                    await this.syncPurchases();
                     return { success: true, purchased: true };
                 case PaywallResult.CANCELLED:
-                    trackPaywallCancelled();
                     return { success: true, purchased: false };
                 case PaywallResult.NOT_PRESENTED:
-                    // Don't track error for NOT_PRESENTED as it's a platform limitation
-                    return { success: false, error: 'Paywall not available on this platform' };
+                    {
+                        const error = 'Paywall not available on this platform';
+                        trackPaywallError(error);
+                        return { success: false, error };
+                    }
                 case PaywallResult.ERROR:
                 default:
-                    const errorMsg = 'Failed to present paywall';
-                    trackPaywallError(errorMsg);
-                    return { success: false, error: errorMsg };
+                    return { success: false, error: 'Failed to present paywall' };
             }
         } catch (error: any) {
             const errorMessage = error.message || 'Failed to present paywall';
