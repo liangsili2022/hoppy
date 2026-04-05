@@ -505,7 +505,7 @@ export const storage = create<StorageState>()((set, get) => {
             const reducerResult = reducer(existingSession.reducerState, messages, agentState);
             const processedMessages = reducerResult.messages;
             const changed = new Set<string>(processedMessages.map((m) => m.id));
-            const hasReadyEvent = reducerResult.hasReadyEvent;
+            const hasReadyEvent = reducerResult.hasReadyEvent ?? false;
             const nextPlanMode = resolvePlanModeTransition(messages, processedMessages);
 
             // Merge messages and sort by createdAt.

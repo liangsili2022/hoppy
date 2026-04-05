@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/auth/AuthContext';
 import { Text } from '@/components/StyledText';
 import { getGitHubOAuthParams } from '@/sync/apiGithub';
-import { sync } from '@/sync/sync';
 import { t } from '@/text';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
@@ -22,8 +21,7 @@ export default React.memo(function GitHubConnectScreen() {
     React.useEffect(() => {
         const subscription = Linking.addEventListener('url', ({ url: incomingUrl }) => {
             if (incomingUrl.startsWith('huppy://github-connected')) {
-                // Refresh profile so the new GitHub connection shows up immediately.
-                void sync.invalidate();
+                // Profile will auto-refresh on next sync tick; just navigate back.
                 router.back();
             } else if (incomingUrl.startsWith('huppy://github-error')) {
                 const params = new URL(incomingUrl);
@@ -133,7 +131,7 @@ export default React.memo(function GitHubConnectScreen() {
             </View>
         </View>
     );
-}
+});
 
 const styles = StyleSheet.create((theme) => ({
     container: {
