@@ -304,6 +304,14 @@ export default function RootLayout() {
                 }}
             />
             <Stack.Screen
+                name="settings/connect/github"
+                options={{
+                    headerShown: true,
+                    headerTitle: 'Connect to GitHub',
+                    headerBackTitle: t('common.back'),
+                }}
+            />
+            <Stack.Screen
                 name="new/index"
                 options={{
                     headerTitle: t('newSession.title'),
