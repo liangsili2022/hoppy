@@ -28,7 +28,7 @@ import { isLocalStorage, getLocalFilesDir } from "@/storage/files";
 import * as path from "path";
 import * as fs from "fs";
 
-export async function startApi() {
+export async function startApi({ databaseDegraded = false }: { databaseDegraded?: boolean } = {}) {
 
     // Configure
     log('Starting API...');
@@ -46,6 +46,18 @@ export async function startApi() {
     app.get('/', function (request, reply) {
         reply.send('Welcome to Huppy Server!');
     });
+
+    // When the external database failed to connect, reject all v1 API requests with
+    // 503 Service Unavailable so clients get a clear signal instead of a 500 crash.
+    if (databaseDegraded) {
+        app.addHook('preHandler', (request, reply, done) => {
+            if (request.url.startsWith('/v1/')) {
+                reply.code(503).send({ error: 'Service temporarily unavailable — database is not connected' });
+                return;
+            }
+            done();
+        });
+    }
 
     // Create typed provider
     app.setValidatorCompiler(validatorCompiler);

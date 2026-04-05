@@ -45,7 +45,11 @@ async function main() {
     // Start
     //
 
-    await startApi();
+    // databaseDegraded is true only when external Postgres failed — PGlite mode
+    // is not degraded, it just skips the eager connect because PGlite is lazy.
+    const databaseDegraded = eagerDatabaseConnectEnabled && !databaseConnected;
+
+    await startApi({ databaseDegraded });
     await startMetricsServer();
     if (databaseConnected) {
         startDatabaseMetricsUpdater();

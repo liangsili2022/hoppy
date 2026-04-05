@@ -127,7 +127,7 @@ export const zhHans: TranslationStructure = {
         privacyPolicy: '隐私政策',
         termsOfService: '服务条款',
         eula: '最终用户许可协议',
-        openSourceLicenses: '开源许可',
+        openSourceLicenses: '开源许可证',
         supportUs: '加入 Huppy Plus',
         supportUsSubtitlePro: '已解锁全部功能',
         supportUsSubtitle: '无限对话与跨设备同步',

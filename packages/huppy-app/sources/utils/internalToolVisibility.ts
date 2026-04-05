@@ -31,26 +31,19 @@ function stringifyCommand(command: unknown): string | null {
     return null;
 }
 
+/**
+ * Collects the actual command strings from a tool call for pattern matching.
+ * Only includes fields that contain real command invocations (name, input.command,
+ * input.parsed_cmd). Deliberately excludes description and title fields — those are
+ * user-facing documentation strings that could accidentally match the pattern and
+ * cause legitimate tools to be filtered out.
+ */
 function collectCandidates(tool: ToolLike): string[] {
     const candidates: string[] = [tool.name];
-
-    if (typeof tool.description === 'string' && tool.description.trim().length > 0) {
-        candidates.push(tool.description.trim());
-    }
 
     const command = stringifyCommand(tool.input?.command);
     if (command) {
         candidates.push(command);
-    }
-
-    const toolCallTitle = tool.input?.toolCall?.title;
-    if (typeof toolCallTitle === 'string' && toolCallTitle.trim().length > 0) {
-        candidates.push(toolCallTitle.trim());
-    }
-
-    const inputTitle = tool.input?.title;
-    if (typeof inputTitle === 'string' && inputTitle.trim().length > 0) {
-        candidates.push(inputTitle.trim());
     }
 
     if (Array.isArray(tool.input?.parsed_cmd)) {
