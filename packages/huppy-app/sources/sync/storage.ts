@@ -21,6 +21,7 @@ import { isMutableTool } from "@/components/tools/knownTools";
 import { projectManager } from "./projectManager";
 import { DecryptedArtifact } from "./artifactTypes";
 import { FeedItem } from "./feedTypes";
+import { resolvePlanModeTransition } from '@/utils/planMode';
 
 // Debounce timer for realtimeMode changes
 let realtimeModeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -490,20 +491,7 @@ export const storage = create<StorageState>()((set, get) => {
         applyMessages: (sessionId: string, messages: NormalizedMessage[]) => {
             let changed = new Set<string>();
             let hasReadyEvent = false;
-
-            // Check if any incoming messages contain EnterPlanMode tool calls
-            let shouldEnterPlanMode = false;
-            for (const msg of messages) {
-                if (msg.role === 'agent') {
-                    for (const c of msg.content) {
-                        if (c.type === 'tool-call' && (c.name === 'EnterPlanMode' || c.name === 'enter_plan_mode')) {
-                            shouldEnterPlanMode = true;
-                            break;
-                        }
-                    }
-                    if (shouldEnterPlanMode) break;
-                }
-            }
+            let nextPlanMode: string | null = null;
 
             set((state) => {
 
@@ -531,6 +519,7 @@ export const storage = create<StorageState>()((set, get) => {
                 if (reducerResult.hasReadyEvent) {
                     hasReadyEvent = true;
                 }
+                nextPlanMode = resolvePlanModeTransition(normalizedMessages, processedMessages);
 
                 // Merge messages
                 const mergedMessagesMap = { ...existingSession.messagesMap };
@@ -546,7 +535,7 @@ export const storage = create<StorageState>()((set, get) => {
                 // IMPORTANT: We extract latestUsage from the mutable reducerState and copy it to the Session object
                 // This ensures latestUsage is available immediately on load, even before messages are fully loaded
                 let updatedSessions = state.sessions;
-                const needsUpdate = (reducerResult.todos !== undefined || existingSession.reducerState.latestUsage || shouldEnterPlanMode) && session;
+                const needsUpdate = (reducerResult.todos !== undefined || existingSession.reducerState.latestUsage || nextPlanMode !== null) && session;
 
                 if (needsUpdate) {
                     updatedSessions = {
@@ -558,8 +547,7 @@ export const storage = create<StorageState>()((set, get) => {
                             latestUsage: existingSession.reducerState.latestUsage ? {
                                 ...existingSession.reducerState.latestUsage
                             } : session.latestUsage,
-                            // Auto-switch to plan mode when EnterPlanMode tool call is detected
-                            ...(shouldEnterPlanMode && { permissionMode: 'plan' })
+                            ...(nextPlanMode !== null && { permissionMode: nextPlanMode })
                         }
                     };
                 }
@@ -580,8 +568,8 @@ export const storage = create<StorageState>()((set, get) => {
                 };
             });
 
-            // Persist plan mode change
-            if (shouldEnterPlanMode) {
+            // Persist plan mode changes detected from the message stream.
+            if (nextPlanMode !== null) {
                 const allModes: Record<string, string> = {};
                 const currentState = get();
                 Object.entries(currentState.sessions).forEach(([id, sess]) => {
