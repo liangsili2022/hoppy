@@ -41,7 +41,7 @@
     "release": "npx --no-install release-it"
   },
   "dependencies": {
-    "@slopus/huppy-wire": "^0.1.0",
+    "@liangsili/huppy-wire": "^0.1.0",
     "axios": "^1.13.2",
     "chalk": "^5.6.2",
     "commander": "^13.1.0",

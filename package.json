@@ -2,7 +2,7 @@
     "name": "monorepo",
     "private": true,
     "scripts": {
-        "cli": "yarn workspace huppy cli",
+        "cli": "yarn workspace huppy-ai cli",
         "release": "node ./scripts/release.cjs",
         "web": "yarn workspace huppy-app web",
         "app-logs": "yarn workspace huppy-app-logs start",

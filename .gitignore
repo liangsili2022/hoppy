@@ -12,6 +12,10 @@ expo-env.d.ts
 /android
 /packages/happy-app/ios
 /packages/happy-app/android
+/packages/huppy-app/ios
+/packages/huppy-app/android
+/packages/huppy-app/credentials.json
+packages/huppy-cli/*.tgz
 
 # Native
 .kotlin/

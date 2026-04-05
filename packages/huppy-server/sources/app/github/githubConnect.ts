@@ -62,18 +62,19 @@ export async function githubConnect(
 
     // Step 4: Start transaction for atomic database operations
     await db.$transaction(async (tx) => {
+        const encryptedToken = Buffer.from(encryptString(['user', userId, 'github', 'token'], accessToken));
 
         // Upsert GitHub user record with encrypted token
         await tx.githubUser.upsert({
             where: { id: githubUserId },
             update: {
                 profile: githubProfile,
-                token: encryptString(['user', userId, 'github', 'token'], accessToken)
+                token: encryptedToken
             },
             create: {
                 id: githubUserId,
                 profile: githubProfile,
-                token: encryptString(['user', userId, 'github', 'token'], accessToken)
+                token: encryptedToken
             }
         });
 

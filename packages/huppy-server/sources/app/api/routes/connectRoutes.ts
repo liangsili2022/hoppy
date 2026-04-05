@@ -8,6 +8,10 @@ import { githubConnect } from "@/app/github/githubConnect";
 import { githubDisconnect } from "@/app/github/githubDisconnect";
 import { Context } from "@/context";
 import { db } from "@/storage/db";
+import {
+    buildGithubOAuthAuthorizeUrl,
+    getGithubOAuthConfig,
+} from "@/modules/githubConfig";
 
 export function connectRoutes(app: Fastify) {
 
@@ -61,10 +65,9 @@ export function connectRoutes(app: Fastify) {
             }
         }
     }, async (request, reply) => {
-        const clientId = process.env.GITHUB_CLIENT_ID;
-        const redirectUri = process.env.GITHUB_REDIRECT_URL;
+        const githubOAuthConfig = getGithubOAuthConfig();
 
-        if (!clientId || !redirectUri) {
+        if (!githubOAuthConfig) {
             return reply.code(400).send({ error: 'GitHub OAuth not configured' });
         }
 
@@ -72,14 +75,11 @@ export function connectRoutes(app: Fastify) {
         const state = await auth.createGithubToken(request.userId);
 
         // Build complete OAuth URL
-        const params = new URLSearchParams({
-            client_id: clientId,
-            redirect_uri: redirectUri,
-            scope: 'read:user,user:email,read:org,codespace',
-            state: state
+        const url = buildGithubOAuthAuthorizeUrl({
+            clientId: githubOAuthConfig.clientId,
+            redirectUri: githubOAuthConfig.redirectUri,
+            state
         });
-
-        const url = `https://github.com/login/oauth/authorize?${params.toString()}`;
 
         return reply.send({ url });
     });
@@ -103,10 +103,9 @@ export function connectRoutes(app: Fastify) {
         }
 
         const userId = tokenData.userId;
-        const clientId = process.env.GITHUB_CLIENT_ID;
-        const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+        const githubOAuthConfig = getGithubOAuthConfig();
 
-        if (!clientId || !clientSecret) {
+        if (!githubOAuthConfig) {
             return reply.redirect('https://app.huppy.ai?error=server_config');
         }
 
@@ -116,13 +115,14 @@ export function connectRoutes(app: Fastify) {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: JSON.stringify({
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    code: code
-                })
+                body: new URLSearchParams({
+                    client_id: githubOAuthConfig.clientId,
+                    client_secret: githubOAuthConfig.clientSecret,
+                    code: code,
+                    redirect_uri: githubOAuthConfig.redirectUri
+                }).toString()
             });
 
             const tokenResponseData = await tokenResponse.json() as {
@@ -257,7 +257,7 @@ export function connectRoutes(app: Fastify) {
         }
     }, async (request, reply) => {
         const userId = request.userId;
-        const encrypted = encryptString(['user', userId, 'vendors', request.params.vendor, 'token'], request.body.token);
+        const encrypted = Buffer.from(encryptString(['user', userId, 'vendors', request.params.vendor, 'token'], request.body.token));
         await db.serviceAccountToken.upsert({
             where: { accountId_vendor: { accountId: userId, vendor: request.params.vendor } },
             update: { updatedAt: new Date(), token: encrypted },

@@ -29,6 +29,7 @@ import { registerKillSessionHandler } from '@/claude/registerKillSessionHandler'
 import { stopCaffeinate } from '@/utils/caffeinate';
 import { connectionState } from '@/utils/serverConnectionErrors';
 import { setupOfflineReconnection } from '@/utils/setupOfflineReconnection';
+import { registerSessionShutdownSignals } from '@/utils/registerSessionShutdownSignals';
 import type { ApiSessionClient } from '@/api/apiSession';
 
 import { createGeminiBackend } from '@/agent/factories/gemini';
@@ -91,7 +92,7 @@ export async function runGemini(opts: {
   });
 
   //
-  // Fetch Gemini cloud token (from 'happy connect gemini')
+  // Fetch Gemini cloud token (from 'huppy connect gemini')
   //
   let cloudToken: string | undefined = undefined;
   let currentUserEmail: string | undefined = undefined;
@@ -377,7 +378,7 @@ export async function runGemini(opts: {
 
     try {
       if (session) {
-        session.updateMetadata((currentMetadata) => ({
+        await session.updateMetadata((currentMetadata) => ({
           ...currentMetadata,
           lifecycleState: 'archived',
           lifecycleStateSince: Date.now(),
@@ -385,7 +386,7 @@ export async function runGemini(opts: {
           archiveReason: 'User terminated'
         }));
 
-        session.sendSessionDeath();
+        await session.sendSessionDeath();
         await session.flush();
         await session.close();
       }
@@ -407,6 +408,12 @@ export async function runGemini(opts: {
 
   session.rpcHandlerManager.registerHandler('abort', handleAbort);
   registerKillSessionHandler(session.rpcHandlerManager, handleKillSession);
+  registerSessionShutdownSignals({
+    onShutdownSignal: (signal) => {
+      logger.debug(`[Gemini] Received ${signal}`);
+      void handleKillSession();
+    },
+  });
 
   //
   // Initialize Ink UI
@@ -637,8 +644,8 @@ export async function runGemini(opts: {
           // Check for authentication error and provide helpful message
           if (errorMessage.includes('Authentication required')) {
             errorMessage = `Authentication required.\n` +
-              `For Google Workspace accounts, run: happy gemini project set <project-id>\n` +
-              `Or use a different Google account: happy connect gemini\n` +
+              `For Google Workspace accounts, run: huppy gemini project set <project-id>\n` +
+              `Or use a different Google account: huppy connect gemini\n` +
               `Guide: https://goo.gle/gemini-cli-auth-docs#workspace-gca`;
           }
           
@@ -1203,8 +1210,8 @@ export async function runGemini(opts: {
                      errorDetails.includes('Authentication required') ||
                      errorCode === -32000) {
               errorMsg = `Authentication required. For Google Workspace accounts, you need to set a Google Cloud Project:\n` +
-                         `  happy gemini project set <your-project-id>\n` +
-                         `Or use a different Google account: happy connect gemini\n` +
+                         `  huppy gemini project set <your-project-id>\n` +
+                         `Or use a different Google account: huppy connect gemini\n` +
                          `Guide: https://goo.gle/gemini-cli-auth-docs#workspace-gca`;
             }
             // Check for empty error (command not found)
@@ -1301,7 +1308,7 @@ export async function runGemini(opts: {
     }
 
     try {
-      session.sendSessionDeath();
+      await session.sendSessionDeath();
       await session.flush();
       await session.close();
     } catch (e) {

@@ -6,7 +6,7 @@ import type { AgentMessage } from '@/agent/core';
 import { AcpBackend, type AcpPermissionHandler } from './AcpBackend';
 import { DefaultTransport } from '@/agent/transport';
 import { AcpSessionManager } from './AcpSessionManager';
-import type { SessionEnvelope } from '@slopus/huppy-wire';
+import type { SessionEnvelope } from '@liangsili/huppy-wire';
 import { logger } from '@/ui/logger';
 import { MessageQueue2 } from '@/utils/MessageQueue2';
 import { hashObject } from '@/utils/deterministicJson';
@@ -19,6 +19,7 @@ import { registerKillSessionHandler } from '@/claude/registerKillSessionHandler'
 import { startHappyServer } from '@/claude/utils/startHappyServer';
 import { projectPath } from '@/projectPath';
 import { BasePermissionHandler, type PermissionResult } from '@/utils/BasePermissionHandler';
+import { registerSessionShutdownSignals } from '@/utils/registerSessionShutdownSignals';
 import { connectionState } from '@/utils/serverConnectionErrors';
 import {
   extractConfigOptionsFromPayload,
@@ -859,12 +860,23 @@ export async function runAcp(opts: {
     }
   }
 
-  session.rpcHandlerManager.registerHandler('abort', handleAbort);
-  registerKillSessionHandler(session.rpcHandlerManager, async () => {
+  const requestShutdown = async (reason: string) => {
+    if (shouldExit) return;
     shouldExit = true;
     messageQueue.close();
-    clearPendingTurn(new Error('Session terminated'));
+    clearPendingTurn(new Error(reason));
     await handleAbort();
+  };
+
+  session.rpcHandlerManager.registerHandler('abort', handleAbort);
+  registerKillSessionHandler(session.rpcHandlerManager, async () => {
+    await requestShutdown('Session terminated');
+  });
+  registerSessionShutdownSignals({
+    onShutdownSignal: (signal) => {
+      logger.debug(`[${opts.agentName}] Received ${signal}`);
+      void requestShutdown(`Process received ${signal}`);
+    },
   });
 
   try {
@@ -945,14 +957,14 @@ export async function runAcp(opts: {
     }
 
     try {
-      session.updateMetadata((currentMetadata) => ({
+      await session.updateMetadata((currentMetadata) => ({
         ...currentMetadata,
         lifecycleState: 'archived',
         lifecycleStateSince: Date.now(),
         archivedBy: 'cli',
         archiveReason: 'Session ended',
       }));
-      session.sendSessionDeath();
+      await session.sendSessionDeath();
       await session.flush();
       await session.close();
     } catch (error) {

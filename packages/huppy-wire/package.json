@@ -1,5 +1,5 @@
 {
-  "name": "@slopus/huppy-wire",
+  "name": "@liangsili/huppy-wire",
   "version": "0.1.0",
   "description": "Shared message wire types and Zod schemas for Huppy clients and services",
   "author": "Kirill Dubovitskiy",

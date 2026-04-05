@@ -4,7 +4,7 @@ import {
     createEnvelope,
     type SessionEnvelope,
     type SessionTurnEndStatus,
-} from '@slopus/huppy-wire';
+} from '@liangsili/huppy-wire';
 
 export type ClaudeSessionProtocolState = {
     currentTurnId: string | null;

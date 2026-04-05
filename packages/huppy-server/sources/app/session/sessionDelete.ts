@@ -25,7 +25,8 @@ export async function sessionDelete(ctx: Context, sessionId: string): Promise<bo
             where: {
                 id: sessionId,
                 accountId: ctx.uid
-            }
+            },
+            select: { id: true }
         });
 
         if (!session) {
@@ -74,7 +75,7 @@ export async function sessionDelete(ctx: Context, sessionId: string): Promise<bo
         }, `Deleted ${deletedAccessKeys.count} access keys`);
 
         // 4. Delete the session itself
-        await tx.session.delete({
+        await tx.session.deleteMany({
             where: { id: sessionId }
         });
         log({ 

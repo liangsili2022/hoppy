@@ -45,7 +45,7 @@ This release revolutionizes remote development with Codex integration and Daemon
 
 ## Version 3 - 2025-08-29
 
-This update introduces seamless GitHub integration, bringing your developer identity directly into Happy while maintaining our commitment to privacy and security.
+This update introduces seamless GitHub integration, bringing your developer identity directly into Huppy while maintaining our commitment to privacy and security.
 
 - Added GitHub account connection through secure OAuth authentication flow
 - Integrated profile synchronization displaying your GitHub avatar, name, and bio

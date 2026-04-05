@@ -23,7 +23,12 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
 
             // Resolve session
             const session = await db.session.findUnique({
-                where: { id: sid, accountId: userId }
+                where: { id: sid, accountId: userId },
+                select: {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                }
             });
             if (!session) {
                 return;
@@ -88,6 +93,11 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
                 where: {
                     id: sid,
                     accountId: userId
+                },
+                select: {
+                    id: true,
+                    agentState: true,
+                    agentStateVersion: true,
                 }
             });
             if (!session) {
@@ -193,7 +203,8 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
 
                 // Resolve session
                 const session = await db.session.findUnique({
-                    where: { id: sid, accountId: userId }
+                    where: { id: sid, accountId: userId },
+                    select: { id: true }
                 });
                 if (!session) {
                     return;
@@ -247,30 +258,34 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
     socket.on('session-end', async (data: {
         sid: string;
         time: number;
-    }) => {
+    }, callback?: (response: { result: 'success' } | { result: 'error' }) => void) => {
         try {
             const { sid, time } = data;
             let t = time;
             if (typeof t !== 'number') {
+                callback?.({ result: 'error' });
                 return;
             }
             if (t > Date.now()) {
                 t = Date.now();
             }
             if (t < Date.now() - 1000 * 60 * 10) { // Ignore if time is in the past 10 minutes
+                callback?.({ result: 'error' });
                 return;
             }
 
             // Resolve session
             const session = await db.session.findUnique({
-                where: { id: sid, accountId: userId }
+                where: { id: sid, accountId: userId },
+                select: { id: true }
             });
             if (!session) {
+                callback?.({ result: 'error' });
                 return;
             }
 
             // Update last active at
-            await db.session.update({
+            await db.session.updateMany({
                 where: { id: sid },
                 data: { lastActiveAt: new Date(t), active: false }
             });
@@ -282,8 +297,10 @@ export function sessionUpdateHandler(userId: string, socket: Socket, connection:
                 payload: sessionActivity,
                 recipientFilter: { type: 'user-scoped-only' }
             });
+            callback?.({ result: 'success' });
         } catch (error) {
             log({ module: 'websocket', level: 'error' }, `Error in session-end: ${error}`);
+            callback?.({ result: 'error' });
         }
     });
 

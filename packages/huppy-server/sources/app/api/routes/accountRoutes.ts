@@ -210,7 +210,8 @@ export function accountRoutes(app: Fastify) {
                     where: {
                         id: sessionId,
                         accountId: userId
-                    }
+                    },
+                    select: { id: true }
                 });
                 if (!session) {
                     return reply.code(404).send({ error: 'Session not found' });

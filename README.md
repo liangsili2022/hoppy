@@ -30,24 +30,24 @@ Step 2: Install CLI on your computer
 </h3>
 
 ```bash
-npm install -g happy-coder
+npm install -g huppy-ai
 ```
 
 <h3 align="center">
-Step 3: Start using `happy` instead of `claude` or `codex`
+Step 3: Start using `huppy` instead of `claude` or `codex`
 </h3>
 
 ```bash
 
 # Instead of: claude
-# Use: happy
+# Use: huppy
 
-happy
+huppy
 
 # Instead of: codex
-# Use: happy codex
+# Use: huppy codex
 
-happy codex
+huppy codex
 
 ```
 
@@ -55,7 +55,7 @@ happy codex
 
 ## How does it work?
 
-On your computer, run `happy` instead of `claude` or `happy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
+On your computer, run `huppy` instead of `claude` or `huppy codex` instead of `codex` to start your AI through our wrapper. When you want to control your coding agent from your phone, it restarts the session in remote mode. To switch back to your computer, just press any key on your keyboard.
 
 ## 🔥 Why Happy Coder?
 

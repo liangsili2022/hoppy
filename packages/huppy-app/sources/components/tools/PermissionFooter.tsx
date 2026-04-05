@@ -5,6 +5,7 @@ import { sessionAllow, sessionDeny } from '@/sync/ops';
 import { useUnistyles } from 'react-native-unistyles';
 import { storage } from '@/sync/storage';
 import { t } from '@/text';
+import { getApprovedModeForTool, isPlanExitToolName } from '@/utils/planMode';
 
 interface PermissionFooterProps {
     permission: {
@@ -29,13 +30,22 @@ export const PermissionFooter: React.FC<PermissionFooterProps> = ({ permission, 
     
     // Check if this is a Codex session - check both metadata.flavor and tool name prefix
     const isCodex = metadata?.flavor === 'codex' || toolName.startsWith('Codex');
+    const approvedMode = getApprovedModeForTool(toolName);
+    const isClaudeEditPermissionTool =
+        toolName === 'Edit'
+        || toolName === 'MultiEdit'
+        || toolName === 'Write'
+        || toolName === 'NotebookEdit';
 
     const handleApprove = async () => {
         if (permission.status !== 'pending' || loadingButton !== null || loadingAllEdits || loadingForSession) return;
 
         setLoadingButton('allow');
         try {
-            await sessionAllow(sessionId, permission.id);
+            await sessionAllow(sessionId, permission.id, approvedMode);
+            if (approvedMode) {
+                storage.getState().updateSessionPermissionMode(sessionId, approvedMode);
+            }
         } catch (error) {
             console.error('Failed to approve permission:', error);
         } finally {
@@ -385,8 +395,8 @@ export const PermissionFooter: React.FC<PermissionFooterProps> = ({ permission, 
                     )}
                 </TouchableOpacity>
 
-                {/* Allow All Edits button - only show for Edit and MultiEdit tools */}
-                {(toolName === 'Edit' || toolName === 'MultiEdit' || toolName === 'Write' || toolName === 'NotebookEdit' || toolName === 'exit_plan_mode' || toolName === 'ExitPlanMode') && (
+                {/* Allow All Edits button - only show for edit tools */}
+                {isClaudeEditPermissionTool && (
                     <TouchableOpacity
                         style={[
                             styles.button,
@@ -416,8 +426,8 @@ export const PermissionFooter: React.FC<PermissionFooterProps> = ({ permission, 
                     </TouchableOpacity>
                 )}
 
-                {/* Allow for session button - only show for non-edit, non-exit-plan tools */}
-                {toolName && toolName !== 'Edit' && toolName !== 'MultiEdit' && toolName !== 'Write' && toolName !== 'NotebookEdit' && toolName !== 'exit_plan_mode' && toolName !== 'ExitPlanMode' && (
+                {/* Allow for session button - only show for non-edit, non-plan tools */}
+                {toolName && !isClaudeEditPermissionTool && !isPlanExitToolName(toolName) && (
                     <TouchableOpacity
                         style={[
                             styles.button,
