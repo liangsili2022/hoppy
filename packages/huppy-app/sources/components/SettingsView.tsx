@@ -56,7 +56,7 @@ export const SettingsView = React.memo(function SettingsView() {
     };
 
     const handleReportIssue = async () => {
-        const url = 'mailto:support@huppy.ai?subject=Bug%20Report';
+        const url = 'https://github.com/liangsili2022/hoppy/issues';
         const supported = await Linking.canOpenURL(url);
         if (supported) {
             await Linking.openURL(url);
