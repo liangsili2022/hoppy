@@ -622,11 +622,8 @@ class Sync {
                 case PaywallResult.CANCELLED:
                     return { success: true, purchased: false };
                 case PaywallResult.NOT_PRESENTED:
-                    {
-                        const error = 'Paywall not available on this platform';
-                        trackPaywallError(error);
-                        return { success: false, error };
-                    }
+                    // Not a real error — paywall is simply unavailable on this platform (e.g. simulator).
+                    return { success: false, error: 'Paywall not available on this platform' };
                 case PaywallResult.ERROR:
                 default:
                     return { success: false, error: 'Failed to present paywall' };
