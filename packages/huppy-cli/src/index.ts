@@ -26,16 +26,18 @@ import { listDaemonSessions, stopDaemonSession } from './daemon/controlClient'
 import { handleAuthCommand } from './commands/auth'
 import { handleConnectCommand } from './commands/connect'
 import { handleSandboxCommand } from './commands/sandbox'
+import { normalizeTopLevelCommandAliases } from './commands/topLevelAliases'
 import { spawnHuppyCLI } from './utils/spawnHuppyCLI'
 import { claudeCliPath } from './claude/claudeLocal'
 import { execFileSync } from 'node:child_process'
 import { extractNoSandboxFlag } from './utils/sandboxFlags'
 import { extractCodexResumeFlag } from '@/codex/cliArgs'
 import { handleResumeCommand } from '@/resume/handleResumeCommand'
+import { resolveEntrypointMode } from './cli/entrypointMode'
 
 
 (async () => {
-  const args = process.argv.slice(2)
+  const args = normalizeTopLevelCommandAliases(process.argv.slice(2))
 
   // If --version is passed - do not log, its likely daemon inquiring about our version
   if (!args.includes('--version')) {
@@ -695,13 +697,16 @@ ${chalk.bold('To clean up runaway processes:')} Use ${chalk.cyan('huppy doctor c
       options.claudeArgs = [...(options.claudeArgs || []), '--chrome']
     }
 
+    const entrypointMode = resolveEntrypointMode({ showHelp, showVersion })
+
     // Show help
-    if (showHelp) {
+    if (entrypointMode === 'help') {
       console.log(`
 ${chalk.bold('huppy')} - Claude Code On the Go
 
 ${chalk.bold('Usage:')}
-  happy [options]         Start Claude with mobile control
+  huppy [options]         Start Claude with mobile control
+  huppy login             Authenticate with Huppy
   huppy auth              Manage authentication
   huppy resume            Resume a previous Huppy session by Huppy session ID
   huppy codex             Start Codex mode
@@ -710,33 +715,33 @@ ${chalk.bold('Usage:')}
   huppy connect           Connect AI vendor API keys
   huppy sandbox           Configure and manage OS-level sandboxing
   huppy notify            Send push notification
-  happy daemon            Manage background service that allows
+  huppy daemon            Manage background service that allows
                             to spawn new sessions away from your computer
   huppy doctor            System diagnostics & troubleshooting
 
 ${chalk.bold('Examples:')}
-  happy                    Start session
+  huppy                    Start session
   huppy resume cmmij8      Resume a previous session by Huppy session ID
-  happy --yolo             Start with bypassing permissions
+  huppy --yolo             Start with bypassing permissions
                             huppy sugar for --dangerously-skip-permissions
-  happy --chrome           Enable Chrome browser access for this session
-  happy --no-chrome        Disable Chrome even if default is on
-  happy --no-sandbox       Disable Happy sandbox for this session
-  happy --js-runtime bun   Use bun instead of node to spawn Claude Code
-  happy --claude-env ANTHROPIC_BASE_URL=http://127.0.0.1:3456
+  huppy --chrome           Enable Chrome browser access for this session
+  huppy --no-chrome        Disable Chrome even if default is on
+  huppy --no-sandbox       Disable Huppy sandbox for this session
+  huppy --js-runtime bun   Use bun instead of node to spawn Claude Code
+  huppy --claude-env ANTHROPIC_BASE_URL=http://127.0.0.1:3456
                            Use a custom API endpoint (e.g., claude-code-router)
   huppy acp gemini         Start Gemini via generic ACP runner
   huppy acp -- opencode --acp
                            Start a custom ACP command
   huppy acp opencode --verbose
                            Print raw ACP backend/envelope events
-  huppy auth login --force Authenticate
+  huppy login --force      Re-authenticate this machine
   huppy doctor             Run diagnostics
 
 ${chalk.bold('Huppy supports ALL Claude options!')}
-  Use any claude flag with happy as you would with claude. Our favorite:
+  Use any claude flag with huppy as you would with claude. Our favorite:
 
-  happy --resume
+  huppy --resume
 
 ${chalk.gray('─'.repeat(60))}
 ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
@@ -755,9 +760,9 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
     }
 
     // Show version
-    if (showVersion) {
+    if (entrypointMode === 'version') {
       console.log(`huppy version: ${packageJson.version}`)
-      // Don't exit - continue to pass --version to Claude Code
+      process.exit(0)
     }
 
     // Normal flow - auth and machine setup
@@ -850,7 +855,7 @@ ${chalk.bold('Examples:')}
   // Load credentials
   let credentials = await readCredentials()
   if (!credentials) {
-    console.error(chalk.red('Error: Not authenticated. Please run "huppy auth login" first.'))
+    console.error(chalk.red('Error: Not authenticated. Please run "huppy login" first.'))
     process.exit(1)
   }
 
