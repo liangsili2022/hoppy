@@ -99,14 +99,14 @@ export function connectRoutes(app: Fastify) {
         const tokenData = await auth.verifyGithubToken(state);
         if (!tokenData) {
             log({ module: 'github-oauth' }, `Invalid state token: ${state}`);
-            return reply.redirect('huppy://github-error?code=invalid_state');
+            return reply.redirect('https://app.huppy.ai?error=invalid_state');
         }
 
         const userId = tokenData.userId;
         const githubOAuthConfig = getGithubOAuthConfig();
 
         if (!githubOAuthConfig) {
-            return reply.redirect('huppy://github-error?code=server_config');
+            return reply.redirect('https://app.huppy.ai?error=server_config');
         }
 
         try {
@@ -132,7 +132,7 @@ export function connectRoutes(app: Fastify) {
             };
 
             if (tokenResponseData.error) {
-                return reply.redirect(`huppy://github-error?code=${encodeURIComponent(tokenResponseData.error)}`);
+                return reply.redirect(`https://app.huppy.ai?error=${encodeURIComponent(tokenResponseData.error)}`);
             }
 
             const accessToken = tokenResponseData.access_token;
@@ -148,7 +148,7 @@ export function connectRoutes(app: Fastify) {
             const userData = await userResponse.json() as GitHubProfile;
 
             if (!userResponse.ok) {
-                return reply.redirect('huppy://github-error?code=github_user_fetch_failed');
+                return reply.redirect('https://app.huppy.ai?error=github_user_fetch_failed');
             }
 
             // Use the new githubConnect operation
@@ -157,11 +157,11 @@ export function connectRoutes(app: Fastify) {
 
             // Deep-link back into the Huppy app using the custom URL scheme.
             // Using huppy:// avoids the need for an AASA file on app.huppy.ai.
-            return reply.redirect(`huppy://github-connected?user=${encodeURIComponent(userData.login)}`);
+            return reply.redirect(`https://app.huppy.ai?github_connected=${encodeURIComponent(userData.login)}`);
 
         } catch (error) {
             log({ module: 'github-oauth' }, `Error in GitHub GET callback: ${error}`);
-            return reply.redirect('huppy://github-error?code=server_error');
+            return reply.redirect('https://app.huppy.ai?error=server_error');
         }
     });
 
