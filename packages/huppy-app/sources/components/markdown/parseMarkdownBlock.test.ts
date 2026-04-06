@@ -12,10 +12,11 @@ describe('parseMarkdownBlock - table parsing', () => {
 
         const blocks = parseMarkdown(md);
         expect(blocks).toHaveLength(1);
+        const cell = (text: string) => [{ text, styles: [], url: null }];
         expect(blocks[0]).toEqual({
             type: 'table',
-            headers: ['A', 'B'],
-            rows: [['1', '2']],
+            headers: [cell('A'), cell('B')],
+            rows: [[cell('1'), cell('2')]],
         });
     });
 
@@ -34,10 +35,11 @@ describe('parseMarkdownBlock - table parsing', () => {
         // Should be recognized as a single table, not 4 separate text blocks
         const tableBlocks = blocks.filter(b => b.type === 'table');
         expect(tableBlocks).toHaveLength(1);
+        const cell = (text: string) => [{ text, styles: [], url: null }];
         expect(tableBlocks[0]).toEqual({
             type: 'table',
-            headers: ['A', 'B'],
-            rows: [['1', '2'], ['3', '4']],
+            headers: [cell('A'), cell('B')],
+            rows: [[cell('1'), cell('2')], [cell('3'), cell('4')]],
         });
     });
 
@@ -50,10 +52,11 @@ describe('parseMarkdownBlock - table parsing', () => {
 
         const blocks = parseMarkdown(md);
         expect(blocks).toHaveLength(1);
+        const cell = (text: string) => [{ text, styles: [], url: null }];
         expect(blocks[0]).toEqual({
             type: 'table',
-            headers: ['', 'Header1', 'Header2'],
-            rows: [['Row1', 'a', 'b']],
+            headers: [[], cell('Header1'), cell('Header2')],
+            rows: [[cell('Row1'), cell('a'), cell('b')]],
         });
     });
 
@@ -81,10 +84,10 @@ describe('parseMarkdownBlock - table parsing', () => {
 
         // Empty first cell should be preserved
         expect(table.headers).toHaveLength(3);
-        expect(table.headers[0]).toBe('');
+        expect(table.headers[0]).toEqual([]);
 
         expect(table.rows).toHaveLength(3);
-        expect(table.rows[0][0]).toBe('Price');
+        expect(table.rows[0][0]).toEqual([{ text: 'Price', styles: [], url: null }]);
     });
 
     it('stops table collection at non-blank, non-pipe lines', () => {

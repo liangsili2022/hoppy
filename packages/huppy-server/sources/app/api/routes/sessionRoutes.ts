@@ -7,6 +7,28 @@ import { log } from "@/utils/log";
 import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { allocateUserSeq } from "@/storage/seq";
 import { sessionDelete } from "@/app/session/sessionDelete";
+import {
+    decodeDataEncryptionKeyForPayload,
+    decodeDataEncryptionKeyForStorage,
+    encodeDataEncryptionKeyForResponse,
+    loadPGliteDataEncryptionKeys,
+    persistPGliteDataEncryptionKey,
+    usesPGliteDataEncryptionKeyWorkaround,
+} from "@/storage/pgliteDataEncryptionKeys";
+
+type SessionRow = {
+    id: string;
+    seq: number;
+    createdAt: Date;
+    updatedAt: Date;
+    metadata: string;
+    metadataVersion: number;
+    agentState: string | null;
+    agentStateVersion: number;
+    active: boolean;
+    lastActiveAt: Date;
+    dataEncryptionKey?: Uint8Array | null;
+};
 
 export function sessionRoutes(app: Fastify) {
 
@@ -16,35 +38,39 @@ export function sessionRoutes(app: Fastify) {
     }, async (request, reply) => {
         const userId = request.userId;
 
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
         const sessions = await db.session.findMany({
             where: { accountId: userId },
             orderBy: { updatedAt: 'desc' },
             take: 150,
-            select: {
-                id: true,
-                seq: true,
-                createdAt: true,
-                updatedAt: true,
-                metadata: true,
-                metadataVersion: true,
-                agentState: true,
-                agentStateVersion: true,
-                dataEncryptionKey: true,
-                active: true,
-                lastActiveAt: true,
-                // messages: {
-                //     orderBy: { seq: 'desc' },
-                //     take: 1,
-                //     select: {
-                //         id: true,
-                //         seq: true,
-                //         content: true,
-                //         localId: true,
-                //         createdAt: true
-                //     }
-                // }
-            }
-        });
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    dataEncryptionKey: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+                : {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+        }) as SessionRow[];
+        const pgliteKeys = await loadPGliteDataEncryptionKeys("Session", sessions.map((session) => session.id));
 
         return reply.send({
             sessions: sessions.map((v) => {
@@ -63,7 +89,9 @@ export function sessionRoutes(app: Fastify) {
                     metadataVersion: v.metadataVersion,
                     agentState: v.agentState,
                     agentStateVersion: v.agentStateVersion,
-                    dataEncryptionKey: v.dataEncryptionKey ? Buffer.from(v.dataEncryptionKey).toString('base64') : null,
+                    dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                        ? (pgliteKeys.get(v.id) ?? null)
+                        : encodeDataEncryptionKeyForResponse(v.dataEncryptionKey),
                     lastMessage: null
                 };
             })
@@ -82,6 +110,7 @@ export function sessionRoutes(app: Fastify) {
         const userId = request.userId;
         const limit = request.query?.limit || 150;
 
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
         const sessions = await db.session.findMany({
             where: {
                 accountId: userId,
@@ -90,20 +119,34 @@ export function sessionRoutes(app: Fastify) {
             },
             orderBy: { lastActiveAt: 'desc' },
             take: limit,
-            select: {
-                id: true,
-                seq: true,
-                createdAt: true,
-                updatedAt: true,
-                metadata: true,
-                metadataVersion: true,
-                agentState: true,
-                agentStateVersion: true,
-                dataEncryptionKey: true,
-                active: true,
-                lastActiveAt: true,
-            }
-        });
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    dataEncryptionKey: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+                : {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+        }) as SessionRow[];
+        const pgliteKeys = await loadPGliteDataEncryptionKeys("Session", sessions.map((session) => session.id));
 
         return reply.send({
             sessions: sessions.map((v) => ({
@@ -117,7 +160,9 @@ export function sessionRoutes(app: Fastify) {
                 metadataVersion: v.metadataVersion,
                 agentState: v.agentState,
                 agentStateVersion: v.agentStateVersion,
-                dataEncryptionKey: v.dataEncryptionKey ? Buffer.from(v.dataEncryptionKey).toString('base64') : null,
+                dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                    ? (pgliteKeys.get(v.id) ?? null)
+                    : encodeDataEncryptionKeyForResponse(v.dataEncryptionKey),
             }))
         });
     });
@@ -166,28 +211,43 @@ export function sessionRoutes(app: Fastify) {
         // Always sort by ID descending for consistent pagination
         const orderBy = { id: 'desc' as const };
 
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
         const sessions = await db.session.findMany({
             where,
             orderBy,
             take: limit + 1, // Fetch one extra to determine if there are more
-            select: {
-                id: true,
-                seq: true,
-                createdAt: true,
-                updatedAt: true,
-                metadata: true,
-                metadataVersion: true,
-                agentState: true,
-                agentStateVersion: true,
-                dataEncryptionKey: true,
-                active: true,
-                lastActiveAt: true,
-            }
-        });
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    dataEncryptionKey: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+                : {
+                    id: true,
+                    seq: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    active: true,
+                    lastActiveAt: true,
+                }
+        }) as SessionRow[];
 
         // Check if there are more results
         const hasNext = sessions.length > limit;
         const resultSessions = hasNext ? sessions.slice(0, limit) : sessions;
+        const pgliteKeys = await loadPGliteDataEncryptionKeys("Session", resultSessions.map((session) => session.id));
 
         // Generate next cursor - simple ID-based cursor
         let nextCursor: string | null = null;
@@ -208,7 +268,9 @@ export function sessionRoutes(app: Fastify) {
                 metadataVersion: v.metadataVersion,
                 agentState: v.agentState,
                 agentStateVersion: v.agentStateVersion,
-                dataEncryptionKey: v.dataEncryptionKey ? Buffer.from(v.dataEncryptionKey).toString('base64') : null,
+                dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                    ? (pgliteKeys.get(v.id) ?? null)
+                    : encodeDataEncryptionKeyForResponse(v.dataEncryptionKey),
             })),
             nextCursor,
             hasNext
@@ -229,14 +291,48 @@ export function sessionRoutes(app: Fastify) {
     }, async (request, reply) => {
         const userId = request.userId;
         const { tag, metadata, dataEncryptionKey } = request.body;
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
 
         const session = await db.session.findFirst({
             where: {
                 accountId: userId,
                 tag: tag
-            }
-        });
+            },
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    seq: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    dataEncryptionKey: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+                : {
+                    id: true,
+                    seq: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    agentState: true,
+                    agentStateVersion: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+        }) as SessionRow | null;
         if (session) {
+            let responseDataEncryptionKey = usesPGliteDataEncryptionKeyWorkaround()
+                ? (await loadPGliteDataEncryptionKeys("Session", [session.id])).get(session.id) ?? null
+                : encodeDataEncryptionKeyForResponse(session.dataEncryptionKey);
+            if (!responseDataEncryptionKey && dataEncryptionKey) {
+                await persistPGliteDataEncryptionKey("Session", session.id, dataEncryptionKey);
+                responseDataEncryptionKey = dataEncryptionKey;
+            }
             log({ module: 'session-create', sessionId: session.id, userId, tag }, `Found existing session: ${session.id} for tag ${tag}`);
             return reply.send({
                 session: {
@@ -246,7 +342,7 @@ export function sessionRoutes(app: Fastify) {
                     metadataVersion: session.metadataVersion,
                     agentState: session.agentState,
                     agentStateVersion: session.agentStateVersion,
-                    dataEncryptionKey: session.dataEncryptionKey ? Buffer.from(session.dataEncryptionKey).toString('base64') : null,
+                    dataEncryptionKey: responseDataEncryptionKey,
                     active: session.active,
                     activeAt: session.lastActiveAt.getTime(),
                     createdAt: session.createdAt.getTime(),
@@ -266,13 +362,22 @@ export function sessionRoutes(app: Fastify) {
                     accountId: userId,
                     tag: tag,
                     metadata: metadata,
-                    dataEncryptionKey: dataEncryptionKey ? new Uint8Array(Buffer.from(dataEncryptionKey, 'base64')) : undefined
+                    dataEncryptionKey: decodeDataEncryptionKeyForStorage(dataEncryptionKey)
                 }
             });
+            await persistPGliteDataEncryptionKey("Session", session.id, dataEncryptionKey);
+            const responseDataEncryptionKey = usesPGliteDataEncryptionKeyWorkaround()
+                ? (dataEncryptionKey ?? null)
+                : encodeDataEncryptionKeyForResponse(session.dataEncryptionKey);
             log({ module: 'session-create', sessionId: session.id, userId }, `Session created: ${session.id}`);
 
             // Emit new session update
-            const updatePayload = buildNewSessionUpdate(session, updSeq, randomKeyNaked(12));
+            const updatePayload = buildNewSessionUpdate({
+                ...session,
+                dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                    ? decodeDataEncryptionKeyForPayload(responseDataEncryptionKey)
+                    : (session.dataEncryptionKey ?? null),
+            }, updSeq, randomKeyNaked(12));
             log({
                 module: 'session-create',
                 userId,
@@ -294,7 +399,7 @@ export function sessionRoutes(app: Fastify) {
                     metadataVersion: session.metadataVersion,
                     agentState: session.agentState,
                     agentStateVersion: session.agentStateVersion,
-                    dataEncryptionKey: session.dataEncryptionKey ? Buffer.from(session.dataEncryptionKey).toString('base64') : null,
+                    dataEncryptionKey: responseDataEncryptionKey,
                     active: session.active,
                     activeAt: session.lastActiveAt.getTime(),
                     createdAt: session.createdAt.getTime(),
@@ -321,7 +426,8 @@ export function sessionRoutes(app: Fastify) {
             where: {
                 id: sessionId,
                 accountId: userId
-            }
+            },
+            select: { id: true }
         });
 
         if (!session) {

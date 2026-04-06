@@ -26,6 +26,7 @@ import { registerKillSessionHandler } from "@/claude/registerKillSessionHandler"
 import { stopCaffeinate } from "@/utils/caffeinate";
 import { connectionState } from '@/utils/serverConnectionErrors';
 import { setupOfflineReconnection } from '@/utils/setupOfflineReconnection';
+import { registerSessionShutdownSignals } from '@/utils/registerSessionShutdownSignals';
 import type { ApiSessionClient } from '@/api/apiSession';
 import { resolveCodexExecutionPolicy } from './executionPolicy';
 import { mapCodexMcpMessageToSessionEnvelopes, mapCodexProcessorMessageToSessionEnvelopes } from './utils/sessionProtocolMapper';
@@ -320,7 +321,7 @@ export async function runCodex(opts: {
         try {
             // Update lifecycle state to archived before closing
             if (session) {
-                session.updateMetadata((currentMetadata) => ({
+                await session.updateMetadata((currentMetadata) => ({
                     ...currentMetadata,
                     lifecycleState: 'archived',
                     lifecycleStateSince: Date.now(),
@@ -329,7 +330,7 @@ export async function runCodex(opts: {
                 }));
                 
                 // Send session death message
-                session.sendSessionDeath();
+                await session.sendSessionDeath();
                 await session.flush();
                 await session.close();
             }
@@ -359,6 +360,12 @@ export async function runCodex(opts: {
     session.rpcHandlerManager.registerHandler('abort', handleAbort);
 
     registerKillSessionHandler(session.rpcHandlerManager, handleKillSession);
+    registerSessionShutdownSignals({
+        onShutdownSignal: (signal) => {
+            logger.debug(`[Codex] Received ${signal}`);
+            void handleKillSession();
+        },
+    });
 
     //
     // Initialize Ink UI
@@ -665,7 +672,7 @@ export async function runCodex(opts: {
 
         try {
             logger.debug('[codex]: sendSessionDeath');
-            session.sendSessionDeath();
+            await session.sendSessionDeath();
             logger.debug('[codex]: flush begin');
             await session.flush();
             logger.debug('[codex]: flush done');

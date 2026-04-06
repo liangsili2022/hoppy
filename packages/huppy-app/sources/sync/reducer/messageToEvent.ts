@@ -8,6 +8,7 @@
 
 import { NormalizedMessage } from "../typesRaw";
 import { AgentEvent } from "../typesRaw";
+import { isInternalTitleChangeToolCall } from "@/utils/internalToolVisibility";
 
 /**
  * Parses a normalized message to determine if it should be converted to an event.
@@ -44,15 +45,12 @@ export function parseMessageAsEvent(msg: NormalizedMessage): AgentEvent | null {
                 
             }
             
-            // Check for mcp__happy__change_title tool calls
-            if (content.type === 'tool-call' && content.name === 'mcp__happy__change_title') {
-                const title = content.input?.title;
-                if (typeof title === 'string') {
-                    return {
-                        type: 'message',
-                        message: `Title changed to "${title}"`,
-                    } as AgentEvent;
-                }
+            if (content.type === 'tool-call' && isInternalTitleChangeToolCall({
+                name: content.name,
+                input: content.input,
+                description: content.description ?? null,
+            })) {
+                continue;
             }
 
             // Check for EnterPlanMode tool calls

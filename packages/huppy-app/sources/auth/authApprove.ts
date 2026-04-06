@@ -8,7 +8,14 @@ interface AuthRequestStatus {
     supportsV2: boolean;
 }
 
-export async function authApprove(token: string, publicKey: Uint8Array, answerV1: Uint8Array, answerV2: Uint8Array) {
+export type AuthApproveResult = 'not_found' | 'already_authorized' | 'approved';
+
+export async function authApprove(
+    token: string,
+    publicKey: Uint8Array,
+    answerV1: Uint8Array,
+    answerV2: Uint8Array
+): Promise<AuthApproveResult> {
     const API_ENDPOINT = getServerUrl();
     const publicKeyBase64 = encodeBase64(publicKey);
     
@@ -26,26 +33,24 @@ export async function authApprove(token: string, publicKey: Uint8Array, answerV1
     
     // Handle different status cases
     if (status === 'not_found') {
-        // Already authorized, no need to approve again
-        console.log('Auth request already authorized or not found');
-        return;
+        console.log('Auth request not found');
+        return 'not_found';
     }
     
     if (status === 'authorized') {
-        // Already authorized, no need to approve again
         console.log('Auth request already authorized');
-        return;
+        return 'already_authorized';
     }
     
     // Handle pending status
-    if (status === 'pending') {
-        await axios.post(`${API_ENDPOINT}/v1/auth/response`, {
-            publicKey: publicKeyBase64,
-            response: supportsV2 ? encodeBase64(answerV2) : encodeBase64(answerV1)
-        }, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            }
-        });
-    }
+    await axios.post(`${API_ENDPOINT}/v1/auth/response`, {
+        publicKey: publicKeyBase64,
+        response: supportsV2 ? encodeBase64(answerV2) : encodeBase64(answerV1)
+    }, {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+        }
+    });
+
+    return 'approved';
 }

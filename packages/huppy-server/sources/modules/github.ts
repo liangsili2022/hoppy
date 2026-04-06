@@ -7,27 +7,40 @@ let app: App | null = null;
 let webhooks: Webhooks | null = null;
 
 export async function initGithub() {
-    if (
-        process.env.GITHUB_APP_ID &&
-        process.env.GITHUB_PRIVATE_KEY &&
-        process.env.GITHUB_CLIENT_ID &&
-        process.env.GITHUB_CLIENT_SECRET &&
-        process.env.GITHUB_REDIRECT_URI &&
-        process.env.GITHUB_WEBHOOK_SECRET
-    ) {
-        app = new App({
-            appId: process.env.GITHUB_APP_ID,
-            privateKey: process.env.GITHUB_PRIVATE_KEY,
-            webhooks: {
-                secret: process.env.GITHUB_WEBHOOK_SECRET
-            }
-        });
-        
+    const appId = process.env.GITHUB_APP_ID;
+    const privateKey = process.env.GITHUB_PRIVATE_KEY;
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+
+    if (appId && privateKey) {
+        const appOptions: ConstructorParameters<typeof App>[0] = {
+            appId,
+            privateKey
+        };
+
+        if (clientId && clientSecret) {
+            appOptions.oauth = {
+                clientId,
+                clientSecret
+            };
+        }
+
+        if (webhookSecret) {
+            appOptions.webhooks = {
+                secret: webhookSecret
+            };
+        }
+
+        app = new App(appOptions);
+    }
+
+    if (webhookSecret) {
         // Initialize standalone webhooks handler for type-safe event processing
         webhooks = new Webhooks({
-            secret: process.env.GITHUB_WEBHOOK_SECRET
+            secret: webhookSecret
         });
-        
+
         // Register type-safe event handlers
         registerWebhookHandlers();
     }

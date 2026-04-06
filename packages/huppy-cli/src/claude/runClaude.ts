@@ -28,6 +28,7 @@ import { claudeLocal } from '@/claude/claudeLocal';
 import { createSessionScanner } from '@/claude/utils/sessionScanner';
 import { Session } from './session';
 import { applySandboxPermissionPolicy, resolveInitialClaudePermissionMode } from './utils/permissionMode';
+import { registerSessionShutdownSignals } from '@/utils/registerSessionShutdownSignals';
 
 /** JavaScript runtime to use for spawning Claude Code */
 export type JsRuntime = 'node' | 'bun'
@@ -391,7 +392,7 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
         try {
             // Update lifecycle state to archived before closing
             if (session) {
-                session.updateMetadata((currentMetadata) => ({
+                await session.updateMetadata((currentMetadata) => ({
                     ...currentMetadata,
                     lifecycleState: 'archived',
                     lifecycleStateSince: Date.now(),
@@ -403,7 +404,7 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
                 currentSession?.cleanup();
 
                 // Send session death message
-                session.sendSessionDeath();
+                await session.sendSessionDeath();
                 await session.flush();
                 await session.close();
             }
@@ -427,8 +428,11 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
     };
 
     // Handle termination signals
-    process.on('SIGTERM', cleanup);
-    process.on('SIGINT', cleanup);
+    registerSessionShutdownSignals({
+        onShutdownSignal: () => {
+            void cleanup();
+        },
+    });
 
     // Handle uncaught exceptions and rejections
     process.on('uncaughtException', (error) => {
@@ -482,7 +486,7 @@ export async function runClaude(credentials: Credentials, options: StartOptions 
     (currentSession as Session | null)?.cleanup();
 
     // Send session death message
-    session.sendSessionDeath();
+    await session.sendSessionDeath();
 
     // Wait for socket to flush
     logger.debug('Waiting for socket to flush...');

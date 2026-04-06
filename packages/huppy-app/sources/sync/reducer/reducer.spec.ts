@@ -298,6 +298,72 @@ describe('reducer', () => {
         });
     });
 
+    describe('internal title-change tool visibility', () => {
+        it('hides direct change_title tool calls from final messages', () => {
+            const state = createReducer();
+            const messages: NormalizedMessage[] = [
+                {
+                    id: 'tool-msg-1',
+                    localId: null,
+                    createdAt: 1000,
+                    role: 'agent',
+                    isSidechain: false,
+                    content: [{
+                        type: 'tool-call',
+                        id: 'tool-call-1',
+                        name: 'change_title',
+                        input: {
+                            title: '企业微信日程管理'
+                        },
+                        description: null,
+                        uuid: 'tool-uuid-1',
+                        parentUUID: null
+                    }]
+                }
+            ];
+
+            const result = reducer(state, messages);
+
+            expect(result.messages).toHaveLength(0);
+            const toolMsgId = state.toolIdToMessageId.get('tool-call-1');
+            expect(toolMsgId).toBeTruthy();
+            expect(state.messages.get(toolMsgId!)?.tool?.name).toBe('change_title');
+        });
+
+        it('hides wrapped happy change_title execute tool calls from final messages', () => {
+            const state = createReducer();
+            const messages: NormalizedMessage[] = [
+                {
+                    id: 'tool-msg-2',
+                    localId: null,
+                    createdAt: 1000,
+                    role: 'agent',
+                    isSidechain: false,
+                    content: [{
+                        type: 'tool-call',
+                        id: 'tool-call-2',
+                        name: 'execute',
+                        input: {
+                            toolCall: {
+                                title: 'happy --change_title "企业微信日程管理" [current working directory /tmp/project] (Changing chat title)'
+                            }
+                        },
+                        description: null,
+                        uuid: 'tool-uuid-2',
+                        parentUUID: null
+                    }]
+                }
+            ];
+
+            const result = reducer(state, messages);
+
+            expect(result.messages).toHaveLength(0);
+            const toolMsgId = state.toolIdToMessageId.get('tool-call-2');
+            expect(toolMsgId).toBeTruthy();
+            expect(state.messages.get(toolMsgId!)?.tool?.name).toBe('execute');
+        });
+    });
+
     describe('edge cases', () => {
         it('should handle empty message array', () => {
             const state = createReducer();

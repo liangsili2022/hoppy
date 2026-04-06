@@ -16,7 +16,7 @@ import { join } from 'node:path';
 import { ApiClient } from '@/api/api';
 import type { ApiSessionClient } from '@/api/apiSession';
 import { AcpSessionManager } from '@/agent/acp/AcpSessionManager';
-import type { SessionEnvelope } from '@slopus/huppy-wire';
+import type { SessionEnvelope } from '@liangsili/huppy-wire';
 import { logger } from '@/ui/logger';
 import { MessageQueue2 } from '@/utils/MessageQueue2';
 import { Credentials, readSettings } from '@/persistence';
@@ -26,6 +26,7 @@ import { setupOfflineReconnection } from '@/utils/setupOfflineReconnection';
 import { notifyDaemonSessionStarted } from '@/daemon/controlClient';
 import { registerKillSessionHandler } from '@/claude/registerKillSessionHandler';
 import { connectionState } from '@/utils/serverConnectionErrors';
+import { registerSessionShutdownSignals } from '@/utils/registerSessionShutdownSignals';
 import { OpenClawBackend } from './OpenClawBackend';
 import type { OpenClawGatewayConfig } from './openclawTypes';
 import type { AgentMessage } from '@/agent/core';
@@ -290,15 +291,26 @@ export async function runOpenClaw(opts: RunOpenClawOptions): Promise<void> {
     abortController = new AbortController();
   }
 
+  const requestShutdown = async (reason: string) => {
+    if (shouldExit) return;
+    shouldExit = true;
+    messageQueue.close();
+    clearPendingTurn(new Error(reason));
+    await handleAbort();
+  };
+
   session.rpcHandlerManager.registerHandler('abort', handleAbort);
   session.rpcHandlerManager.registerHandler('openclaw-retry-pairing', async () => {
     backend.retryConnect();
   });
   registerKillSessionHandler(session.rpcHandlerManager, async () => {
-    shouldExit = true;
-    messageQueue.close();
-    clearPendingTurn(new Error('Session terminated'));
-    await handleAbort();
+    await requestShutdown('Session terminated');
+  });
+  registerSessionShutdownSignals({
+    onShutdownSignal: (signal) => {
+      logger.debug(`[openclaw] Received ${signal}`);
+      void requestShutdown(`Process received ${signal}`);
+    },
   });
 
   try {
@@ -341,14 +353,14 @@ export async function runOpenClaw(opts: RunOpenClawOptions): Promise<void> {
     await backend.dispose();
 
     try {
-      session.updateMetadata((currentMetadata) => ({
+      await session.updateMetadata((currentMetadata) => ({
         ...currentMetadata,
         lifecycleState: 'archived',
         lifecycleStateSince: Date.now(),
         archivedBy: 'cli',
         archiveReason: 'Session ended',
       }));
-      session.sendSessionDeath();
+      await session.sendSessionDeath();
       await session.flush();
       await session.close();
     } catch (error) {

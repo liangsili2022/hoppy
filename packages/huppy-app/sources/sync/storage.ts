@@ -21,6 +21,7 @@ import { isMutableTool } from "@/components/tools/knownTools";
 import { projectManager } from "./projectManager";
 import { DecryptedArtifact } from "./artifactTypes";
 import { FeedItem } from "./feedTypes";
+import { resolvePlanModeTransition } from '@/utils/planMode';
 
 // Debounce timer for realtimeMode changes
 let realtimeModeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -488,103 +489,71 @@ export const storage = create<StorageState>()((set, get) => {
             isDataReady: true
         })),
         applyMessages: (sessionId: string, messages: NormalizedMessage[]) => {
-            let changed = new Set<string>();
-            let hasReadyEvent = false;
+            // Read current state upfront so the set() updater below stays pure.
+            const snapshot = get();
 
-            // Check if any incoming messages contain EnterPlanMode tool calls
-            let shouldEnterPlanMode = false;
-            for (const msg of messages) {
-                if (msg.role === 'agent') {
-                    for (const c of msg.content) {
-                        if (c.type === 'tool-call' && (c.name === 'EnterPlanMode' || c.name === 'enter_plan_mode')) {
-                            shouldEnterPlanMode = true;
-                            break;
-                        }
-                    }
-                    if (shouldEnterPlanMode) break;
-                }
-            }
+            const existingSession = snapshot.sessionMessages[sessionId] || {
+                messages: [],
+                messagesMap: {},
+                reducerState: createReducer(),
+                isLoaded: false
+            };
+            const session = snapshot.sessions[sessionId];
+            const agentState = session?.agentState;
 
-            set((state) => {
+            // Run reducer and compute derived values outside set().
+            const reducerResult = reducer(existingSession.reducerState, messages, agentState);
+            const processedMessages = reducerResult.messages;
+            const changed = new Set<string>(processedMessages.map((m) => m.id));
+            const hasReadyEvent = reducerResult.hasReadyEvent ?? false;
+            const nextPlanMode = resolvePlanModeTransition(messages, processedMessages);
 
-                // Resolve session messages state
-                const existingSession = state.sessionMessages[sessionId] || {
-                    messages: [],
-                    messagesMap: {},
-                    reducerState: createReducer(),
-                    isLoaded: false
-                };
-
-                // Get the session's agentState if available
-                const session = state.sessions[sessionId];
-                const agentState = session?.agentState;
-
-                // Messages are already normalized, no need to process them again
-                const normalizedMessages = messages;
-
-                // Run reducer with agentState
-                const reducerResult = reducer(existingSession.reducerState, normalizedMessages, agentState);
-                const processedMessages = reducerResult.messages;
-                for (let message of processedMessages) {
-                    changed.add(message.id);
-                }
-                if (reducerResult.hasReadyEvent) {
-                    hasReadyEvent = true;
-                }
-
-                // Merge messages
-                const mergedMessagesMap = { ...existingSession.messagesMap };
-                processedMessages.forEach(message => {
-                    mergedMessagesMap[message.id] = message;
-                });
-
-                // Convert to array and sort by createdAt
-                const messagesArray = Object.values(mergedMessagesMap)
-                    .sort((a, b) => b.createdAt - a.createdAt);
-
-                // Update session with todos and latestUsage
-                // IMPORTANT: We extract latestUsage from the mutable reducerState and copy it to the Session object
-                // This ensures latestUsage is available immediately on load, even before messages are fully loaded
-                let updatedSessions = state.sessions;
-                const needsUpdate = (reducerResult.todos !== undefined || existingSession.reducerState.latestUsage || shouldEnterPlanMode) && session;
-
-                if (needsUpdate) {
-                    updatedSessions = {
-                        ...state.sessions,
-                        [sessionId]: {
-                            ...session,
-                            ...(reducerResult.todos !== undefined && { todos: reducerResult.todos }),
-                            // Copy latestUsage from reducerState to make it immediately available
-                            latestUsage: existingSession.reducerState.latestUsage ? {
-                                ...existingSession.reducerState.latestUsage
-                            } : session.latestUsage,
-                            // Auto-switch to plan mode when EnterPlanMode tool call is detected
-                            ...(shouldEnterPlanMode && { permissionMode: 'plan' })
-                        }
-                    };
-                }
-
-                return {
-                    ...state,
-                    sessions: updatedSessions,
-                    sessionMessages: {
-                        ...state.sessionMessages,
-                        [sessionId]: {
-                            ...existingSession,
-                            messages: messagesArray,
-                            messagesMap: mergedMessagesMap,
-                            reducerState: existingSession.reducerState, // Explicitly include the mutated reducer state
-                            isLoaded: true
-                        }
-                    }
-                };
+            // Merge messages and sort by createdAt.
+            const mergedMessagesMap = { ...existingSession.messagesMap };
+            processedMessages.forEach((message) => {
+                mergedMessagesMap[message.id] = message;
             });
+            const messagesArray = Object.values(mergedMessagesMap)
+                .sort((a, b) => b.createdAt - a.createdAt);
 
-            // Persist plan mode change
-            if (shouldEnterPlanMode) {
+            // Compute updated sessions.
+            // IMPORTANT: latestUsage is copied from reducerState so it is available
+            // immediately on load, even before messages are fully loaded.
+            const needsUpdate = (reducerResult.todos !== undefined || existingSession.reducerState.latestUsage || nextPlanMode !== null) && session;
+            const updatedSessions = needsUpdate
+                ? {
+                    ...snapshot.sessions,
+                    [sessionId]: {
+                        ...session,
+                        ...(reducerResult.todos !== undefined && { todos: reducerResult.todos }),
+                        latestUsage: existingSession.reducerState.latestUsage
+                            ? { ...existingSession.reducerState.latestUsage }
+                            : session.latestUsage,
+                        ...(nextPlanMode !== null && { permissionMode: nextPlanMode }),
+                    },
+                }
+                : snapshot.sessions;
+
+            // Pure state update — no side effects inside the updater.
+            set((state) => ({
+                ...state,
+                sessions: updatedSessions,
+                sessionMessages: {
+                    ...state.sessionMessages,
+                    [sessionId]: {
+                        ...existingSession,
+                        messages: messagesArray,
+                        messagesMap: mergedMessagesMap,
+                        reducerState: existingSession.reducerState,
+                        isLoaded: true,
+                    },
+                },
+            }));
+
+            // Persist plan mode changes detected from the message stream.
+            if (nextPlanMode !== null) {
                 const allModes: Record<string, string> = {};
-                const currentState = get();
-                Object.entries(currentState.sessions).forEach(([id, sess]) => {
+                Object.entries(updatedSessions).forEach(([id, sess]) => {
                     if (sess.permissionMode && sess.permissionMode !== 'default') {
                         allModes[id] = sess.permissionMode;
                     }

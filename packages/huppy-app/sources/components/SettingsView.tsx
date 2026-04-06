@@ -28,6 +28,7 @@ import { useProfile } from '@/sync/storage';
 import { getDisplayName, getAvatarUrl, getBio } from '@/sync/profile';
 import { Avatar } from '@/components/Avatar';
 import { t } from '@/text';
+import { getSettingsConnectRoute } from '@/utils/settingsConnectRoutes';
 
 export const SettingsView = React.memo(function SettingsView() {
     const { theme } = useUnistyles();
@@ -47,7 +48,7 @@ export const SettingsView = React.memo(function SettingsView() {
     const { connectTerminal, connectWithUrl, isLoading } = useConnectTerminal();
 
     const handleGitHub = async () => {
-        const url = 'https://github.com/slopus/happy';
+        const url = 'https://huppy.ai';
         const supported = await Linking.canOpenURL(url);
         if (supported) {
             await Linking.openURL(url);
@@ -55,7 +56,7 @@ export const SettingsView = React.memo(function SettingsView() {
     };
 
     const handleReportIssue = async () => {
-        const url = 'https://github.com/slopus/happy/issues';
+        const url = 'https://github.com/liangsili2022/hoppy/issues';
         const supported = await Linking.canOpenURL(url);
         if (supported) {
             await Linking.openURL(url);
@@ -154,13 +155,11 @@ export const SettingsView = React.memo(function SettingsView() {
                             )}
                         </>
                     ) : (
-                        // Logo view: Original logo + version
+                        // Logo view: HUPPY text in brand color
                         <>
-                            <Image
-                                source={theme.dark ? require('@/assets/images/logotype-light.png') : require('@/assets/images/logotype-dark.png')}
-                                contentFit="contain"
-                                style={{ width: 300, height: 90, marginBottom: 12 }}
-                            />
+                            <Text style={{ fontSize: 52, fontWeight: '900', letterSpacing: 8, color: '#FF9A3C', marginBottom: 12 }}>
+                                HUPPY
+                            </Text>
                         </>
                     )}
                 </View>
@@ -241,7 +240,7 @@ export const SettingsView = React.memo(function SettingsView() {
                     }
                     onPress={isGitHubConnected ? handleDisconnectGitHub : connectGitHub}
                     loading={connectingGitHub || disconnectingGitHub}
-                    showChevron={false}
+                    showChevron={!isGitHubConnected}
                 />
             </ItemGroup>
 
@@ -355,9 +354,9 @@ export const SettingsView = React.memo(function SettingsView() {
                     }}
                 />
                 <Item
-                    title={t('settings.github')}
-                    icon={<Ionicons name="logo-github" size={29} color={theme.colors.text} />}
-                    detail="slopus/happy"
+                    title={t('settings.website')}
+                    icon={<Ionicons name="globe-outline" size={29} color={theme.colors.text} />}
+                    detail="huppy.ai"
                     onPress={handleGitHub}
                 />
                 <Item
@@ -380,7 +379,7 @@ export const SettingsView = React.memo(function SettingsView() {
                     title={t('settings.termsOfService')}
                     icon={<Ionicons name="document-text-outline" size={29} color="#007AFF" />}
                     onPress={async () => {
-                        const url = 'https://github.com/slopus/happy/blob/main/TERMS.md';
+                        const url = 'https://huppy.ai/terms/';
                         const supported = await Linking.canOpenURL(url);
                         if (supported) {
                             await Linking.openURL(url);
@@ -400,6 +399,16 @@ export const SettingsView = React.memo(function SettingsView() {
                         }}
                     />
                 )}
+                <Item
+                    title={t('settings.openSourceLicenses')}
+                    icon={<Ionicons name="code-slash-outline" size={29} color={theme.colors.textSecondary} />}
+                    onPress={() => {
+                        Modal.alert(
+                            t('settings.openSourceLicenses'),
+                            'This app is based on the "happy" project by Kirill Dubovitskiy, licensed under the MIT License.\n\nCopyright (c) Kirill Dubovitskiy\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files, to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.'
+                        );
+                    }}
+                />
                 <Item
                     title={t('common.version')}
                     detail={appVersion}

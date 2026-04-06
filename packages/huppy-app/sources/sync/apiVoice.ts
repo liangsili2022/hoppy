@@ -1,4 +1,4 @@
-import { type VoiceTokenResponse } from '@slopus/huppy-wire';
+import { type VoiceTokenResponse } from '@liangsili/huppy-wire';
 import { AuthCredentials } from '@/auth/tokenStorage';
 import { getServerUrl } from './serverConfig';
 import { config } from '@/config';

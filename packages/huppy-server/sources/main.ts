@@ -10,14 +10,22 @@ import { startDatabaseMetricsUpdater } from "@/app/monitoring/metrics2";
 import { initEncrypt } from "./modules/encrypt";
 import { initGithub } from "./modules/github";
 import { loadFiles } from "./storage/files";
+import { connectDatabaseForStartup } from "./storage/databaseStartup";
 
 async function main() {
 
     // Storage
-    await db.$connect();
-    onShutdown('db', async () => {
-        await db.$disconnect();
-    });
+    const eagerDatabaseConnectEnabled = process.env.DB_PROVIDER !== "pglite";
+    const databaseConnected = eagerDatabaseConnectEnabled
+        ? await connectDatabaseForStartup({
+            db,
+            onShutdown,
+            log,
+        })
+        : false;
+    if (!eagerDatabaseConnectEnabled) {
+        log({ module: "db", level: "warn" }, "Skipping eager database connect for PGlite startup");
+    }
     onShutdown('activity-cache', async () => {
         activityCache.shutdown();
     });
@@ -37,10 +45,18 @@ async function main() {
     // Start
     //
 
-    await startApi();
+    // databaseDegraded is true only when external Postgres failed — PGlite mode
+    // is not degraded, it just skips the eager connect because PGlite is lazy.
+    const databaseDegraded = eagerDatabaseConnectEnabled && !databaseConnected;
+
+    await startApi({ databaseDegraded });
     await startMetricsServer();
-    startDatabaseMetricsUpdater();
-    startTimeout();
+    if (databaseConnected) {
+        startDatabaseMetricsUpdater();
+        startTimeout();
+    } else {
+        log({ module: "db", level: "warn" }, "Database background workers disabled while running in degraded mode");
+    }
 
     //
     // Ready

@@ -10,6 +10,7 @@ import { Modal } from '@/modal';
 import { t } from '@/text';
 import { sync } from '@/sync/sync';
 import { useAllMachines, useEntitlement } from '@/sync/storage';
+import { extractTerminalAuthPublicKeyTail, isTerminalAuthUrl } from '@/utils/terminalAuthUrl';
 
 // Free tier limit: 1 connected Mac. Exceeding this requires Pro.
 const FREE_MACHINE_LIMIT = 1;
@@ -27,7 +28,8 @@ export function useConnectTerminal(options?: UseConnectTerminalOptions) {
     const isPro = useEntitlement('pro');
 
     const processAuthUrl = React.useCallback(async (url: string) => {
-        if (!url.startsWith('happy://terminal?')) {
+        const tail = extractTerminalAuthPublicKeyTail(url);
+        if (!tail) {
             Modal.alert(t('common.error'), t('modals.invalidAuthUrl'), [{ text: t('common.ok') }]);
             return false;
         }
@@ -40,14 +42,18 @@ export function useConnectTerminal(options?: UseConnectTerminalOptions) {
         
         setIsLoading(true);
         try {
-            const tail = url.slice('happy://terminal?'.length);
             const publicKey = decodeBase64(tail, 'base64url');
             const responseV1 = encryptBox(decodeBase64(auth.credentials!.secret, 'base64url'), publicKey);
             let responseV2Bundle = new Uint8Array(sync.encryption.contentDataKey.length + 1);
             responseV2Bundle[0] = 0;
             responseV2Bundle.set(sync.encryption.contentDataKey, 1);
             const responseV2 = encryptBox(responseV2Bundle, publicKey);
-            await authApprove(auth.credentials!.token, publicKey, responseV1, responseV2);
+            const approvalResult = await authApprove(auth.credentials!.token, publicKey, responseV1, responseV2);
+
+            if (approvalResult === 'not_found') {
+                Modal.alert(t('common.error'), t('modals.failedToConnectTerminal'), [{ text: t('common.ok') }]);
+                return false;
+            }
             
             Modal.alert(t('common.success'), t('modals.terminalConnectedSuccessfully'), [
                 { 
@@ -85,7 +91,7 @@ export function useConnectTerminal(options?: UseConnectTerminalOptions) {
     React.useEffect(() => {
         if (CameraView.isModernBarcodeScannerAvailable) {
             const subscription = CameraView.onModernBarcodeScanned(async (event) => {
-                if (event.data.startsWith('happy://terminal?')) {
+                if (isTerminalAuthUrl(event.data)) {
                     // Dismiss scanner on Android is called automatically when barcode is scanned
                     if (Platform.OS === 'ios') {
                         await CameraView.dismissScanner();

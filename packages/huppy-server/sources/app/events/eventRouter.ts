@@ -3,7 +3,7 @@ import { log } from "@/utils/log";
 import { GitHubProfile } from "@/app/api/types";
 import { AccountProfile } from "@/types";
 import { getPublicUrl } from "@/storage/files";
-import type { SessionMessageContent } from "@slopus/huppy-wire";
+import type { SessionMessageContent } from "@liangsili/huppy-wire";
 
 // === CONNECTION TYPES ===
 

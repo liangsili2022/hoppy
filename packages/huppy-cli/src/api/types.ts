@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Update, UpdateMachineBody } from '@slopus/huppy-wire';
+import type { Update, UpdateMachineBody } from '@liangsili/huppy-wire';
 import { UsageSchema } from '@/claude/types'
 import type { SandboxConfig } from '@/persistence'
 
@@ -10,7 +10,7 @@ export {
   UpdateMachineBodySchema,
   UpdateSchema,
   UpdateSessionBodySchema,
-} from '@slopus/huppy-wire';
+} from '@liangsili/huppy-wire';
 export type {
   SessionMessage,
   SessionMessageContent,
@@ -18,7 +18,7 @@ export type {
   UpdateBody,
   UpdateMachineBody,
   UpdateSessionBody,
-} from '@slopus/huppy-wire';
+} from '@liangsili/huppy-wire';
 
 /**
  * Permission mode type - includes both Claude and Codex modes
@@ -65,7 +65,11 @@ export interface ClientToServerEvents {
     thinking: boolean;
     mode?: 'local' | 'remote';
   }) => void
-  'session-end': (data: { sid: string, time: number }) => void,
+  'session-end': (data: { sid: string, time: number }, cb?: (answer: {
+    result: 'success'
+  } | {
+    result: 'error'
+  }) => void) => void,
   'update-metadata': (data: { sid: string, expectedVersion: number, metadata: string }, cb: (answer: {
     result: 'error'
   } | {

@@ -6,6 +6,28 @@ import { log } from "@/utils/log";
 import { randomKeyNaked } from "@/utils/randomKeyNaked";
 import { allocateUserSeq } from "@/storage/seq";
 import { buildNewMachineUpdate, buildUpdateMachineUpdate } from "@/app/events/eventRouter";
+import {
+    decodeDataEncryptionKeyForPayload,
+    decodeDataEncryptionKeyForStorage,
+    encodeDataEncryptionKeyForResponse,
+    loadPGliteDataEncryptionKeys,
+    persistPGliteDataEncryptionKey,
+    usesPGliteDataEncryptionKeyWorkaround,
+} from "@/storage/pgliteDataEncryptionKeys";
+
+type MachineRow = {
+    id: string;
+    metadata: string;
+    metadataVersion: number;
+    daemonState: string | null;
+    daemonStateVersion: number;
+    seq: number;
+    active: boolean;
+    lastActiveAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    dataEncryptionKey?: Uint8Array | null;
+};
 
 export function machinesRoutes(app: Fastify) {
     app.post('/v1/machines', {
@@ -21,16 +43,50 @@ export function machinesRoutes(app: Fastify) {
     }, async (request, reply) => {
         const userId = request.userId;
         const { id, metadata, daemonState, dataEncryptionKey } = request.body;
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
 
         // Check if machine exists (like sessions do)
         const machine = await db.machine.findFirst({
             where: {
                 accountId: userId,
                 id: id
-            }
-        });
+            },
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    dataEncryptionKey: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+                : {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+        }) as MachineRow | null;
 
         if (machine) {
+            let responseDataEncryptionKey = usesPGliteDataEncryptionKeyWorkaround()
+                ? (await loadPGliteDataEncryptionKeys("Machine", [machine.id])).get(machine.id) ?? null
+                : encodeDataEncryptionKeyForResponse(machine.dataEncryptionKey);
+            if (!responseDataEncryptionKey && dataEncryptionKey) {
+                await persistPGliteDataEncryptionKey("Machine", machine.id, dataEncryptionKey);
+                responseDataEncryptionKey = dataEncryptionKey;
+            }
             // Machine exists - just return it
             log({ module: 'machines', machineId: id, userId }, 'Found existing machine');
             return reply.send({
@@ -40,7 +96,7 @@ export function machinesRoutes(app: Fastify) {
                     metadataVersion: machine.metadataVersion,
                     daemonState: machine.daemonState,
                     daemonStateVersion: machine.daemonStateVersion,
-                    dataEncryptionKey: machine.dataEncryptionKey ? Buffer.from(machine.dataEncryptionKey).toString('base64') : null,
+                    dataEncryptionKey: responseDataEncryptionKey,
                     active: machine.active,
                     activeAt: machine.lastActiveAt.getTime(),  // Return as activeAt for API consistency
                     createdAt: machine.createdAt.getTime(),
@@ -59,19 +115,28 @@ export function machinesRoutes(app: Fastify) {
                     metadataVersion: 1,
                     daemonState: daemonState || null,
                     daemonStateVersion: daemonState ? 1 : 0,
-                    dataEncryptionKey: dataEncryptionKey ? new Uint8Array(Buffer.from(dataEncryptionKey, 'base64')) : undefined,
+                    dataEncryptionKey: decodeDataEncryptionKeyForStorage(dataEncryptionKey),
                     // Default to offline - in case the user does not start daemon
                     active: false,
                     // lastActiveAt and activeAt defaults to now() in schema
                 }
             });
+            await persistPGliteDataEncryptionKey("Machine", newMachine.id, dataEncryptionKey);
+            const responseDataEncryptionKey = usesPGliteDataEncryptionKeyWorkaround()
+                ? (dataEncryptionKey ?? null)
+                : encodeDataEncryptionKeyForResponse(newMachine.dataEncryptionKey);
 
             // Emit both new-machine and update-machine events for backward compatibility
             const updSeq1 = await allocateUserSeq(userId);
             const updSeq2 = await allocateUserSeq(userId);
             
             // Emit new-machine event with all data including dataEncryptionKey
-            const newMachinePayload = buildNewMachineUpdate(newMachine, updSeq1, randomKeyNaked(12));
+            const newMachinePayload = buildNewMachineUpdate({
+                ...newMachine,
+                dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                    ? decodeDataEncryptionKeyForPayload(responseDataEncryptionKey)
+                    : (newMachine.dataEncryptionKey ?? null),
+            }, updSeq1, randomKeyNaked(12));
             eventRouter.emitUpdate({
                 userId,
                 payload: newMachinePayload,
@@ -97,7 +162,7 @@ export function machinesRoutes(app: Fastify) {
                     metadataVersion: newMachine.metadataVersion,
                     daemonState: newMachine.daemonState,
                     daemonStateVersion: newMachine.daemonStateVersion,
-                    dataEncryptionKey: newMachine.dataEncryptionKey ? Buffer.from(newMachine.dataEncryptionKey).toString('base64') : null,
+                    dataEncryptionKey: responseDataEncryptionKey,
                     active: newMachine.active,
                     activeAt: newMachine.lastActiveAt.getTime(),  // Return as activeAt for API consistency
                     createdAt: newMachine.createdAt.getTime(),
@@ -113,11 +178,39 @@ export function machinesRoutes(app: Fastify) {
         preHandler: app.authenticate,
     }, async (request, reply) => {
         const userId = request.userId;
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
 
         const machines = await db.machine.findMany({
             where: { accountId: userId },
-            orderBy: { lastActiveAt: 'desc' }
-        });
+            orderBy: { lastActiveAt: 'desc' },
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    dataEncryptionKey: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+                : {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+        }) as MachineRow[];
+        const pgliteKeys = await loadPGliteDataEncryptionKeys("Machine", machines.map((machine) => machine.id));
 
         return machines.map(m => ({
             id: m.id,
@@ -125,7 +218,9 @@ export function machinesRoutes(app: Fastify) {
             metadataVersion: m.metadataVersion,
             daemonState: m.daemonState,
             daemonStateVersion: m.daemonStateVersion,
-            dataEncryptionKey: m.dataEncryptionKey ? Buffer.from(m.dataEncryptionKey).toString('base64') : null,
+            dataEncryptionKey: usesPGliteDataEncryptionKeyWorkaround()
+                ? (pgliteKeys.get(m.id) ?? null)
+                : encodeDataEncryptionKeyForResponse(m.dataEncryptionKey),
             seq: m.seq,
             active: m.active,
             activeAt: m.lastActiveAt.getTime(),
@@ -145,17 +240,48 @@ export function machinesRoutes(app: Fastify) {
     }, async (request, reply) => {
         const userId = request.userId;
         const { id } = request.params;
+        const includeDataEncryptionKey = !usesPGliteDataEncryptionKeyWorkaround();
 
         const machine = await db.machine.findFirst({
             where: {
                 accountId: userId,
                 id: id
-            }
-        });
+            },
+            select: includeDataEncryptionKey
+                ? {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    dataEncryptionKey: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+                : {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
+                    seq: true,
+                    active: true,
+                    lastActiveAt: true,
+                    createdAt: true,
+                    updatedAt: true,
+                }
+        }) as MachineRow | null;
 
         if (!machine) {
             return reply.code(404).send({ error: 'Machine not found' });
         }
+
+        const responseDataEncryptionKey = usesPGliteDataEncryptionKeyWorkaround()
+            ? (await loadPGliteDataEncryptionKeys("Machine", [machine.id])).get(machine.id) ?? null
+            : encodeDataEncryptionKeyForResponse(machine.dataEncryptionKey);
 
         return {
             machine: {
@@ -164,7 +290,7 @@ export function machinesRoutes(app: Fastify) {
                 metadataVersion: machine.metadataVersion,
                 daemonState: machine.daemonState,
                 daemonStateVersion: machine.daemonStateVersion,
-                dataEncryptionKey: machine.dataEncryptionKey ? Buffer.from(machine.dataEncryptionKey).toString('base64') : null,
+                dataEncryptionKey: responseDataEncryptionKey,
                 seq: machine.seq,
                 active: machine.active,
                 activeAt: machine.lastActiveAt.getTime(),

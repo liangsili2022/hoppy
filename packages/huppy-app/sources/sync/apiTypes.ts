@@ -5,7 +5,7 @@ import {
     ApiUpdateNewMessageSchema,
     ApiUpdateSessionStateSchema,
     type ApiMessage,
-} from '@slopus/huppy-wire';
+} from '@liangsili/huppy-wire';
 import { GitHubProfileSchema, ImageRefSchema } from './profile';
 import { RelationshipStatusSchema, UserProfileSchema } from './friendTypes';
 import { FeedBodySchema } from './feedTypes';

@@ -159,6 +159,7 @@ describe('ApiSessionClient v3 messages API migration', () => {
             off: vi.fn(),
             emit: vi.fn(),
             emitWithAck: vi.fn(async () => ({ result: 'error' })),
+            timeout: vi.fn(() => mockSocket),
             volatile: {
                 emit: vi.fn()
             },
@@ -881,5 +882,71 @@ describe('ApiSessionClient v3 messages API migration', () => {
         expect(mockSocket.close).toHaveBeenCalledTimes(1);
         expect(mockAxiosGet).not.toHaveBeenCalled();
         expect(mockAxiosPost).not.toHaveBeenCalled();
+    });
+
+    it('returns an awaitable metadata update that resolves after server ack', async () => {
+        const client = new ApiSessionClient('fake-token', session);
+        const updatedMetadata = {
+            ...session.metadata,
+            lifecycleState: 'archived',
+            archiveReason: 'Session ended'
+        };
+
+        let resolveAck!: (value: any) => void;
+        mockSocket.emitWithAck.mockImplementationOnce(() => new Promise((resolve) => {
+            resolveAck = resolve;
+        }));
+
+        let settled = false;
+        const updatePromise = client.updateMetadata((currentMetadata) => ({
+            ...currentMetadata,
+            lifecycleState: 'archived',
+            archiveReason: 'Session ended'
+        }));
+
+        void Promise.resolve(updatePromise).then(() => {
+            settled = true;
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(settled).toBe(false);
+
+        resolveAck({
+            result: 'success',
+            version: 1,
+            metadata: encryptContent(session, updatedMetadata)
+        });
+
+        await updatePromise;
+
+        expect(settled).toBe(true);
+        expect(client.getMetadata()).toEqual(updatedMetadata);
+    });
+
+    it('waits for session-end ack before resolving sendSessionDeath', async () => {
+        const client = new ApiSessionClient('fake-token', session);
+
+        let resolveAck!: (value: any) => void;
+        mockSocket.emitWithAck.mockImplementationOnce(() => new Promise((resolve) => {
+            resolveAck = resolve;
+        }));
+
+        let settled = false;
+        const endPromise = Promise.resolve(client.sendSessionDeath()).then(() => {
+            settled = true;
+        });
+
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(settled).toBe(false);
+        expect(mockSocket.timeout).toHaveBeenCalled();
+        expect(mockSocket.emitWithAck).toHaveBeenCalledWith('session-end', expect.objectContaining({
+            sid: 'test-session-id',
+            time: expect.any(Number)
+        }));
+
+        resolveAck({ result: 'success' });
+        await endPromise;
+
+        expect(settled).toBe(true);
     });
 });

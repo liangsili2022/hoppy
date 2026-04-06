@@ -12,7 +12,7 @@ const bundleId = {
 const elevenLabsAgentId = {
     development: 'agent_7801k2c0r5hjfraa1kdbytpvs6yt',
     preview: 'agent_7801k2c0r5hjfraa1kdbytpvs6yt',
-    production: 'agent_6701k211syvvegba4kt7m68nxjmw',
+    production: 'agent_7801k2c0r5hjfraa1kdbytpvs6yt',
 }[variant];
 const consoleLoggingDefault = {
     development: true,
@@ -28,7 +28,7 @@ export default {
         runtimeVersion: "21",
         orientation: "default",
         icon: "./sources/assets/images/icon.png",
-        scheme: "huppy",
+        scheme: ["huppy", "happy"],
         userInterfaceStyle: "automatic",
         ios: {
             supportsTablet: true,
@@ -160,7 +160,7 @@ export default {
             ]
         ],
         updates: {
-            url: "https://u.expo.dev/4558dd3d-cd5a-47cd-bad9-e591a241cc06",
+            url: "https://u.expo.dev/58b89ba5-c439-4ee3-80da-40844c173898",
             requestHeaders: {
                 "expo-channel-name": "production"
             }
@@ -173,7 +173,7 @@ export default {
                 root: "./sources/app"
             },
             eas: {
-                projectId: "4558dd3d-cd5a-47cd-bad9-e591a241cc06"
+                projectId: "58b89ba5-c439-4ee3-80da-40844c173898"
             },
             app: {
                 postHogKey: process.env.EXPO_PUBLIC_POSTHOG_API_KEY,
@@ -184,6 +184,6 @@ export default {
                 consoleLoggingDefault,
             }
         },
-        owner: "bulkacorp"
+        owner: "siloliang"
     }
 };

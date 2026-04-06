@@ -5,6 +5,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 let pgliteInstance: PGlite | null = null;
+let prismaClient: PrismaClient | null = null;
 
 type WebAssemblyModuleCtor = new (bytes: Buffer) => WebAssembly.Module;
 
@@ -54,7 +55,38 @@ function createClient(): PrismaClient {
     return new PrismaClient();
 }
 
-export const db = createClient();
+function getClient(): PrismaClient {
+    if (!prismaClient) {
+        prismaClient = createClient();
+    }
+    return prismaClient;
+}
+
+function getClientObject(): object {
+    return getClient() as unknown as object;
+}
+
+const dbProxyHandler: ProxyHandler<PrismaClient> = {
+    get(_target, prop, receiver) {
+        const client = getClientObject();
+        const value = Reflect.get(client, prop, receiver);
+        return typeof value === "function" ? value.bind(client) : value;
+    },
+    set(_target, prop, value, receiver) {
+        return Reflect.set(getClientObject(), prop, value, receiver);
+    },
+    has(_target, prop) {
+        return Reflect.has(getClientObject(), prop);
+    },
+    ownKeys() {
+        return Reflect.ownKeys(getClientObject());
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+        return Object.getOwnPropertyDescriptor(getClientObject(), prop);
+    },
+};
+
+export const db = new Proxy({} as PrismaClient, dbProxyHandler);
 
 export function getPGlite(): PGlite | null {
     return pgliteInstance;

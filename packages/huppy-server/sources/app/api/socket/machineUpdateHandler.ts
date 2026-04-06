@@ -68,6 +68,11 @@ export function machineUpdateHandler(userId: string, socket: Socket) {
                 where: {
                     accountId: userId,
                     id: machineId
+                },
+                select: {
+                    id: true,
+                    metadata: true,
+                    metadataVersion: true,
                 }
             });
             if (!machine) {
@@ -107,6 +112,10 @@ export function machineUpdateHandler(userId: string, socket: Socket) {
                     where: {
                         accountId: userId,
                         id: machineId
+                    },
+                    select: {
+                        metadata: true,
+                        metadataVersion: true,
                     }
                 });
                 callback({
@@ -162,6 +171,11 @@ export function machineUpdateHandler(userId: string, socket: Socket) {
                 where: {
                     accountId: userId,
                     id: machineId
+                },
+                select: {
+                    id: true,
+                    daemonState: true,
+                    daemonStateVersion: true,
                 }
             });
             if (!machine) {
@@ -202,6 +216,10 @@ export function machineUpdateHandler(userId: string, socket: Socket) {
                     where: {
                         accountId: userId,
                         id: machineId
+                    },
+                    select: {
+                        daemonState: true,
+                        daemonStateVersion: true,
                     }
                 });
                 callback({

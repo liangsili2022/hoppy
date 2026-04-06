@@ -116,6 +116,7 @@ import { createTracer, traceMessages, TracerState } from "./reducerTracer";
 import { AgentState } from "../storageTypes";
 import { MessageMeta } from "../typesMessageMeta";
 import { parseMessageAsEvent } from "./messageToEvent";
+import { isInternalTitleChangeToolCall } from "@/utils/internalToolVisibility";
 
 type ReducerMessage = {
     id: string;
@@ -1190,6 +1191,10 @@ function convertReducerMessageToMessage(reducerMsg: ReducerMessage, state: Reduc
             meta: reducerMsg.meta
         };
     } else if (reducerMsg.role === 'agent' && reducerMsg.tool !== null) {
+        if (isInternalTitleChangeToolCall(reducerMsg.tool)) {
+            return null;
+        }
+
         // Convert children recursively
         let childMessages: Message[] = [];
         let children = reducerMsg.realID ? state.sidechains.get(reducerMsg.realID) || [] : [];

@@ -45,6 +45,7 @@
     "production": {
       "autoIncrement": true,
       "channel": "production",
+      "credentialsSource": "local",
       "env": {
         "APP_ENV": "production",
         "SHARP_IGNORE_GLOBAL_LIBVIPS": "1"
@@ -54,9 +55,9 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "steve@bulkovo.com",
+        "appleId": "178272907@qq.com",
         "ascAppId": "6761417736",
-        "appleTeamId": "466DQWDR8C"
+        "appleTeamId": "Q5A3FVX59D"
       }
     }
   }

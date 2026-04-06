@@ -11,7 +11,7 @@ import { AsyncLock } from '@/utils/lock';
 import { RpcHandlerManager } from './rpc/RpcHandlerManager';
 import { registerCommonHandlers } from '../modules/common/registerCommonHandlers';
 import { calculateCost } from '@/utils/pricing';
-import { type SessionEnvelope, type SessionTurnEndStatus } from '@slopus/huppy-wire';
+import { type SessionEnvelope, type SessionTurnEndStatus } from '@liangsili/huppy-wire';
 import {
     closeClaudeTurnWithStatus,
     mapClaudeLogMessageToSessionEnvelopes,
@@ -489,8 +489,22 @@ export class ApiSessionClient extends EventEmitter {
     /**
      * Send session death message
      */
-    sendSessionDeath() {
-        this.socket.emit('session-end', { sid: this.sessionId, time: Date.now() });
+    async sendSessionDeath(): Promise<void> {
+        const payload = {
+            sid: this.sessionId,
+            time: Date.now()
+        };
+
+        try {
+            const answer = await this.socket.timeout(10_000).emitWithAck('session-end', payload);
+            if (answer?.result === 'error') {
+                logger.debug('[API] session-end rejected by server, falling back to best-effort emit');
+                this.socket.emit('session-end', payload);
+            }
+        } catch (error) {
+            logger.debug('[API] session-end ack failed, falling back to best-effort emit', error);
+            this.socket.emit('session-end', payload);
+        }
     }
 
     /**
@@ -534,24 +548,31 @@ export class ApiSessionClient extends EventEmitter {
      * Update session metadata
      * @param handler - Handler function that returns the updated metadata
      */
-    updateMetadata(handler: (metadata: Metadata) => Metadata) {
-        this.metadataLock.inLock(async () => {
-            await backoff(async () => {
-                let updated = handler(this.metadata!); // Weird state if metadata is null - should never happen but here we are
-                const answer = await this.socket.emitWithAck('update-metadata', { sid: this.sessionId, expectedVersion: this.metadataVersion, metadata: encodeBase64(encrypt(this.encryptionKey, this.encryptionVariant, updated)) });
-                if (answer.result === 'success') {
-                    this.metadata = decrypt(this.encryptionKey, this.encryptionVariant, decodeBase64(answer.metadata));
-                    this.metadataVersion = answer.version;
-                } else if (answer.result === 'version-mismatch') {
-                    if (answer.version > this.metadataVersion) {
-                        this.metadataVersion = answer.version;
+    async updateMetadata(handler: (metadata: Metadata) => Metadata): Promise<void> {
+        await this.metadataLock.inLock(async () => {
+            try {
+                await backoff(async () => {
+                    let updated = handler(this.metadata!); // Weird state if metadata is null - should never happen but here we are
+                    const answer = await this.socket.emitWithAck('update-metadata', { sid: this.sessionId, expectedVersion: this.metadataVersion, metadata: encodeBase64(encrypt(this.encryptionKey, this.encryptionVariant, updated)) });
+                    if (answer.result === 'success') {
                         this.metadata = decrypt(this.encryptionKey, this.encryptionVariant, decodeBase64(answer.metadata));
+                        this.metadataVersion = answer.version;
+                    } else if (answer.result === 'version-mismatch') {
+                        if (answer.version > this.metadataVersion) {
+                            this.metadataVersion = answer.version;
+                            this.metadata = decrypt(this.encryptionKey, this.encryptionVariant, decodeBase64(answer.metadata));
+                        }
+                        throw new Error('Metadata version mismatch');
+                    } else if (answer.result === 'error') {
+                        // Hard error - ignore
                     }
-                    throw new Error('Metadata version mismatch');
-                } else if (answer.result === 'error') {
-                    // Hard error - ignore
-                }
-            });
+                });
+            } catch (error) {
+                logger.debug('[API] Failed to update metadata', {
+                    sessionId: this.sessionId,
+                    error
+                });
+            }
         });
     }
 

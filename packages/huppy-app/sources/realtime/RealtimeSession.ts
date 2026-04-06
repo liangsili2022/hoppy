@@ -7,6 +7,7 @@ import { t } from '@/text';
 import { requestMicrophonePermission, showMicrophonePermissionDeniedAlert } from '@/utils/microphonePermissions';
 import { storage } from '@/sync/storage';
 import { config } from '@/config';
+import { shouldUseDirectVoiceConnection } from '@/utils/voiceSettingsAccess';
 
 let voiceSession: VoiceSession | null = null;
 let voiceSessionStarted: boolean = false;
@@ -33,7 +34,8 @@ export async function startRealtimeSession(sessionId: string, initialContext?: s
     try {
         // Bypass Happy server token when enabled
         const { voiceBypassToken, voiceCustomAgentId } = storage.getState().settings;
-        if (voiceBypassToken) {
+        const { devModeEnabled } = storage.getState().localSettings;
+        if (shouldUseDirectVoiceConnection({ isDevBuild: __DEV__, devModeEnabled, voiceBypassToken })) {
             const agentId = voiceCustomAgentId || config.elevenLabsAgentId;
             if (!agentId) {
                 storage.getState().setRealtimeStatus('disconnected');

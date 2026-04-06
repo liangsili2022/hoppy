@@ -1,4 +1,4 @@
-# Happy
+# Huppy
 
 Code on the go — control AI coding agents from your phone, browser, or terminal.
 
@@ -7,19 +7,19 @@ Free. Open source. Code anywhere.
 ## Installation
 
 ```bash
-npm install -g happy
+npm install -g huppy-ai
 ```
 
-> Migrated from the `happy-coder` package. Thanks to [@franciscop](https://github.com/franciscop) for donating the `happy` package name!
+Install from npm as `huppy-ai`, then run it as `huppy`.
 
 ## Usage
 
 ### Claude Code (default)
 
 ```bash
-happy
+huppy
 # or
-happy claude
+huppy claude
 ```
 
 This will:
@@ -31,13 +31,13 @@ This will:
 ### More agents
 
 ```
-happy codex
-happy gemini
-happy openclaw
+huppy codex
+huppy gemini
+huppy openclaw
 
 # or any ACP-compatible CLI
-happy acp opencode
-happy acp -- custom-agent --flag
+huppy acp opencode
+huppy acp -- custom-agent --flag
 ```
 
 ## Daemon
@@ -45,44 +45,47 @@ happy acp -- custom-agent --flag
 The daemon is a background service that stays running on your machine. It lets you spawn and manage coding sessions remotely — from your phone or the web app — without needing an open terminal.
 
 ```bash
-happy daemon start
-happy daemon stop
-happy daemon status
-happy daemon list
+huppy daemon start
+huppy daemon stop
+huppy daemon status
+huppy daemon list
 ```
 
-The daemon starts automatically when you run `happy`, so you usually don't need to manage it manually.
+The daemon starts automatically when you run `huppy`, so you usually don't need to manage it manually.
 
 ## Authentication
 
 ```bash
-happy auth login
-happy auth logout
+huppy login
+huppy logout
+huppy status
 ```
+
+The longer `huppy auth login`, `huppy auth logout`, and `huppy auth status` forms still work too.
 
 Happy uses cryptographic key pairs for authentication — your private key stays on your machine. All session data is end-to-end encrypted before leaving your device.
 
 To connect third-party agent APIs:
 
 ```bash
-happy connect gemini
-happy connect claude
-happy connect codex
-happy connect status
+huppy connect gemini
+huppy connect claude
+huppy connect codex
+huppy connect status
 ```
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `happy` | Start Claude Code session (default) |
-| `happy codex` | Start Codex mode |
-| `happy gemini` | Start Gemini CLI session |
-| `happy openclaw` | Start OpenClaw session |
-| `happy acp` | Start any ACP-compatible agent |
-| `happy resume <id>` | Resume a previous session |
-| `happy notify` | Send push notification to your devices |
-| `happy doctor` | Diagnostics & troubleshooting |
+| `huppy` | Start Claude Code session (default) |
+| `huppy codex` | Start Codex mode |
+| `huppy gemini` | Start Gemini CLI session |
+| `huppy openclaw` | Start OpenClaw session |
+| `huppy acp` | Start any ACP-compatible agent |
+| `huppy resume <id>` | Resume a previous session |
+| `huppy notify` | Send push notification to your devices |
+| `huppy doctor` | Diagnostics & troubleshooting |
 
 ---
 
@@ -92,29 +95,29 @@ happy connect status
 
 | Variable | Description |
 |----------|-------------|
-| `HAPPY_SERVER_URL` | Custom server URL (default: `https://api.cluster-fluster.com`) |
-| `HAPPY_WEBAPP_URL` | Custom web app URL (default: `https://app.huppy.ai`) |
-| `HAPPY_HOME_DIR` | Custom home directory for Happy data (default: `~/.happy`) |
-| `HAPPY_DISABLE_CAFFEINATE` | Disable macOS sleep prevention |
-| `HAPPY_EXPERIMENTAL` | Enable experimental features |
+| `HUPPY_SERVER_URL` | Custom server URL (default: `https://api.huppy.ai`) |
+| `HUPPY_WEBAPP_URL` | Custom web app URL (default: `https://app.huppy.ai`) |
+| `HUPPY_HOME_DIR` | Custom home directory for Huppy data (default: `~/.huppy`) |
+| `HUPPY_DISABLE_CAFFEINATE` | Disable macOS sleep prevention |
+| `HUPPY_EXPERIMENTAL` | Enable experimental features |
 
 ### Sandbox (experimental)
 
-Happy can run agents inside an OS-level sandbox to restrict file system and network access.
+Huppy can run agents inside an OS-level sandbox to restrict file system and network access.
 
 ```bash
-happy sandbox configure
-happy sandbox status
-happy sandbox disable
+huppy sandbox configure
+huppy sandbox status
+huppy sandbox disable
 ```
 
 ### Building from source
 
 ```bash
 git clone https://github.com/slopus/happy
-cd happy-cli
+cd happy/app
 yarn install
-yarn workspace happy cli --help
+yarn workspace huppy-ai cli --help
 ```
 
 ## Requirements
@@ -122,7 +125,7 @@ yarn workspace happy cli --help
 - Node.js >= 20.0.0
 - For Claude: `claude` CLI installed & logged in
 - For Codex: `codex` CLI installed & logged in
-- For Gemini: `npm install -g @google/gemini-cli` + `happy connect gemini`
+- For Gemini: `npm install -g @google/gemini-cli` + `huppy connect gemini`
 
 ## License
 

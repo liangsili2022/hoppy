@@ -1,1 +1,1 @@
-export * from '@slopus/huppy-wire';
+export * from '@liangsili/huppy-wire';

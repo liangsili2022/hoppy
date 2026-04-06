@@ -1,11 +1,32 @@
 import { z } from "zod";
 import * as crypto from "crypto";
-import { VoiceTokenResponseSchema } from "@slopus/huppy-wire";
 import { type Fastify } from "../types";
 import { log } from "@/utils/log";
 import { hasEntitlement } from "@/app/billing/entitlements";
 
 const VOICE_FREE_LIMIT_SECONDS = 3600;
+const LEGACY_PRODUCTION_ELEVENLABS_AGENT_ID = "agent_6701k211syvvegba4kt7m68nxjmw";
+const CURRENT_PRODUCTION_ELEVENLABS_AGENT_ID = "agent_7801k2c0r5hjfraa1kdbytpvs6yt";
+const ELEVENLABS_AGENT_ID_ALIASES = new Map<string, string>([
+    [LEGACY_PRODUCTION_ELEVENLABS_AGENT_ID, CURRENT_PRODUCTION_ELEVENLABS_AGENT_ID],
+]);
+const VoiceTokenResponseSchema = z.discriminatedUnion("allowed", [
+    z.object({
+        allowed: z.literal(true),
+        token: z.string(),
+        agentId: z.string(),
+        elevenUserId: z.string(),
+        usedSeconds: z.number(),
+        limitSeconds: z.number(),
+    }),
+    z.object({
+        allowed: z.literal(false),
+        reason: z.enum(["voice_limit_reached", "subscription_required"]),
+        usedSeconds: z.number(),
+        limitSeconds: z.number(),
+        agentId: z.string(),
+    }),
+]);
 
 /**
  * Derives a stable pseudonymous ElevenLabs user ID from the Happy user ID.
@@ -61,6 +82,10 @@ async function getUsedVoiceSeconds(
     return totalSeconds;
 }
 
+function resolveVoiceAgentId(agentId: string): string {
+    return ELEVENLABS_AGENT_ID_ALIASES.get(agentId) ?? agentId;
+}
+
 
 export function voiceRoutes(app: Fastify) {
     app.post('/v1/voice/token', {
@@ -79,8 +104,12 @@ export function voiceRoutes(app: Fastify) {
     }, async (request, reply) => {
         const userId = request.userId; // CUID from JWT
         const { agentId } = request.body;
+        const resolvedAgentId = resolveVoiceAgentId(agentId);
 
         log({ module: 'voice' }, `Voice token request from user ${userId}`);
+        if (resolvedAgentId !== agentId) {
+            log({ module: 'voice' }, `Remapped voice agent ${agentId} -> ${resolvedAgentId}`);
+        }
 
         const elevenLabsApiKey = process.env.ELEVENLABS_API_KEY;
         if (!elevenLabsApiKey) {
@@ -110,7 +139,7 @@ export function voiceRoutes(app: Fastify) {
                     reason: 'voice_limit_reached' as const,
                     usedSeconds,
                     limitSeconds: VOICE_FREE_LIMIT_SECONDS,
-                    agentId,
+                    agentId: resolvedAgentId,
                 });
             }
         }
@@ -118,7 +147,7 @@ export function voiceRoutes(app: Fastify) {
         // Mint an ElevenLabs conversation token
         try {
             const tokenResponse = await fetch(
-                `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${agentId}`,
+                `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${resolvedAgentId}`,
                 {
                     method: 'GET',
                     headers: {
@@ -139,7 +168,7 @@ export function voiceRoutes(app: Fastify) {
             return reply.send({
                 allowed: true as const,
                 token: tokenData.token,
-                agentId,
+                agentId: resolvedAgentId,
                 elevenUserId,
                 usedSeconds,
                 limitSeconds: VOICE_FREE_LIMIT_SECONDS,

@@ -106,19 +106,28 @@ async function syncSubscriberToCache(accountId: string, data: RevenueCatSubscrib
  * Always trusts RevenueCat as the authoritative source.
  */
 export async function hasEntitlement(accountId: string, entitlement: "pro"): Promise<boolean> {
-    // Fast path: check local cache
-    const cached = await db.subscription.findFirst({
-        where: {
-            accountId,
-            platform: "revenuecat",
-            originalTransactionId: `rc_${accountId}`,
-        },
-        select: { status: true, expiresAt: true, updatedAt: true },
-    });
+    let cached: {
+        status: string;
+        expiresAt: Date | null;
+        updatedAt: Date;
+    } | null = null;
+
+    try {
+        cached = await db.subscription.findFirst({
+            where: {
+                accountId,
+                platform: "revenuecat",
+                originalTransactionId: `rc_${accountId}`,
+            },
+            select: { status: true, expiresAt: true, updatedAt: true },
+        });
+    } catch (error) {
+        log({ module: "billing", level: "warn" }, `Subscription cache lookup failed for user ${accountId}: ${error}`);
+    }
 
     const cacheIsFresh = cached && (Date.now() - cached.updatedAt.getTime() < CACHE_TTL_MS);
 
-    if (cacheIsFresh) {
+    if (cacheIsFresh && cached) {
         return cached.status === "active" && (!cached.expiresAt || cached.expiresAt > new Date());
     }
 
@@ -132,7 +141,11 @@ export async function hasEntitlement(accountId: string, entitlement: "pro"): Pro
         return false;
     }
 
-    await syncSubscriberToCache(accountId, data);
+    try {
+        await syncSubscriberToCache(accountId, data);
+    } catch (error) {
+        log({ module: "billing", level: "warn" }, `Subscription cache sync failed for user ${accountId}: ${error}`);
+    }
 
     return !!data.subscriber?.entitlements?.active?.pro;
 }
